@@ -1,0 +1,30 @@
+{% extends 'base-content-form.html' %}
+  {% block title %} Cadastrar Sala {% endblock %}
+
+  {% block content_header %}
+    <h1>Cadastrar Sala</h1>
+    <p>Utilize o formulário abaixo para cadastrar uma sala</p>
+ {% endblock %}
+
+  {% block content %}
+      <form action="/cadastrar-sala">
+        <div class="mb-3">
+            <label for="tipo" class="form-label">Tipo</label>
+            <select class="form-select" id="tipo" name="tipo">
+                <option selected>Selecione um tipo</option>
+                <option value="1">Laboratório de Informática</option>
+                <option value="2">Laboratório de Química</option>
+                <option value="3">Sala de Aula</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="capacidade" class="form-label">Capacidade</label>
+            <input type="number" class="form-control" name="capacidade" id="capacidade">
+        </div>
+        <div class="mb-3">
+            <label for="descricao" class="form-label">Descrição</label>
+            <textarea class="form-control" name="descricao" id="descricao" cols="30" rows="10"></textarea>
+        </div>
+        <button type="submit" class="btn btn-dark">Cadastrar</button>
+    </form>
+ {% endblock %}

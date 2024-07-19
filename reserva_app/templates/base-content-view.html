@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title_super %}
+  {% block title %}  {% endblock %}
+{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <div class="row mt-4">
+            <div class="col">
+                {% block content_header %}{% endblock %}
+            </div>
+        </div>
+
+        <div class="row mt-4">
+              {% block content %}{% endblock %}
+        </div>
+    </div>
+{% endblock %}

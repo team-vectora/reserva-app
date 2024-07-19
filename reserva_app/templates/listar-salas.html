@@ -1,0 +1,46 @@
+{% extends 'base-content-view.html' %}
+  {% block title %} Lista de Salas {% endblock %}
+
+  {% block content_header %}
+        <h1>Lista de Salas</h1>
+ {% endblock %}
+
+  {% block content %}
+    <div class="col">
+      <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">Id</th>
+                <th scope="col">Tipo</th>
+                <th scope="col">Descrição</th>
+                <th scope="col">Capacidade</th>
+                <th scope="col">Ativa</th>
+                <th scope="col">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for sala in salas%}
+                <tr>
+                  <td>sala.codigo</td>
+                  <td>sala.tipo</td>
+                  <td>sala.descricao</td>
+                  <td>sala.capacidade</td>
+                  <td>sala.ativa</td>
+                  <td>
+                    <form action="">
+                      <button class="btn btn-sm btn-dark" type="submit" formaction="/cadastrar-sala?tipo={{ sala.tipo }}&capacidade={{ sala.capacidade }}&descricao={{ sala.descricao }}">Editar</button>
+                      <button class="btn btn-sm btn-dark" type="submit" formaction="/reservas.html">Desativar</button>
+                      <button class="btn btn-sm btn-dark" type="submit" formaction="/reservas.html">Excluir</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% if salas == [] %}
+            <h2> Nada aqui ainda</h2>
+          {% endif %}
+      </div>
+    </div>
+ {% endblock %}

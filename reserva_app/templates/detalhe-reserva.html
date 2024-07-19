@@ -1,0 +1,27 @@
+{% extends 'base-content-view.html' %}
+  {% block title %} Reservas {% endblock %}
+
+  {% block content_header %}
+        <h1>Reserva 832</h1>
+        <p><b>Sala:</b> 3</p>
+        <p><b>Início:</b> 30/04/2024 - 14:00</p>
+        <p><b>Fim:</b> 30/04/2024 - 16:30</p>
+        <p>Reservado para Nome do Professor</p>
+ {% endblock %}
+
+  {% block content %}
+    <div class="col">
+          <div class="col-md-6 mb-4">
+            <h3>Gerar Comprovante</h3>
+            <p>Gere o pdf do comprovante de reserva.</p>
+            <a href="" class="btn btn-dark">Gerar Comprovante</a>
+          </div>
+          <div class="col-md-6 mb-4">
+            <h3>Cancelar Reserva</h3>
+            <p>Você pode cancelar a reserva até 12 horas antes do início da reserva.</p>
+            <form action="">
+              <button class="btn btn-dark">Cancelar Reserva</button>
+            </form>
+          </div>
+    </div>
+ {% endblock %}

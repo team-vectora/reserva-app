@@ -1,0 +1,18 @@
+{% extends 'base-content-view.html' %}
+  {% block title %} Reservas {% endblock %}
+
+  {% block content_header %}
+        <h1>Reservas</h1>
+ {% endblock %}
+
+  {% block content %}
+      <div class="col">
+        <input type="text" class="form-control" placeholder="First name" aria-label="First name">
+      </div>
+      <div class="col">
+        <input type="text" class="form-control" placeholder="Last name" aria-label="Last name">
+      </div>
+      <div class="col">
+        <button class="btn btn-dark" type="submit">Filtrar</button>
+      </div>
+ {% endblock %}

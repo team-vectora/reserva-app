@@ -1,0 +1,30 @@
+{% extends 'base-content-form.html' %}
+  {% block title %} Reservas {% endblock %}
+
+  {% block content_header %}
+        <h1>Reservar Sala</h1>
+        <p>Utilize o formulário abaixo para reservar uma sala</p>
+ {% endblock %}
+
+  {% block content %}
+      <form action="/reservas">
+        <div class="mb-3">
+          <label for="sala" class="form-label">Sala</label>
+          <select class="form-select" id="sala" name="sala">
+            <option selected>Selecione a sala</option>
+            <option value="1">Sala 1</option>
+            <option value="2">Sala 2</option>
+            <option value="3">Sala 3</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="inicio" class="form-label">Data e Hora Início</label>
+          <input type="datetime-local" class="form-control" name="inicio" id="inicio">
+        </div>
+        <div class="mb-3">
+          <label for="inicio" class="form-label">Data e Hora Fim</label>
+          <input type="datetime-local" class="form-control" name="inicio" id="inicio">
+        </div>
+        <button type="submit" class="btn btn-dark">Reservar</button>
+      </form>
+ {% endblock %}
