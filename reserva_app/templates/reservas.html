@@ -15,4 +15,14 @@
       <div class="col">
         <button class="btn btn-dark" type="submit">Filtrar</button>
       </div>
+
+      </div>
+      {% for key, reserva in reservas.items() %}
+        <div class="reserva-item d-flex flex-column align-items-center justify-content-center p-3 border rounded mb-3">
+          <p><strong>Duração:</strong> {{ reserva.duracao }} <strong>Início:</strong> {{ reserva.datetime_start }} <strong>Fim:</strong> {{ reserva.datetime_end }} <strong>Faltam:</strong> {{ reserva.falta }}</p>
+          <a class="btn btn-dark" href="{{ url_for('detalhe_reserva', id=reserva.codigo) }}">Mais detalhes</a>
+        </div>
+      {% endfor %}
+  
+      
  {% endblock %}

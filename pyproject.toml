@@ -6,7 +6,7 @@ authors = ["Domingos Lucas <domingos.latorre@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.10"
 flask = "^3.0.3"
 
 

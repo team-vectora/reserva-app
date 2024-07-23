@@ -37,6 +37,7 @@ class Model:
                 file.truncate()
 
         return self.__codigo
+    
 
     @staticmethod
     def _objects(child_class):
@@ -101,6 +102,43 @@ class Model:
 
         def get_list(self):
             return self.__list_model
+        
+        def get_dict(self):
+            from reserva_app.models import Reserva, Sala, User
+
+            arr = self.get_list()
+            result_dict = {}
+
+            if isinstance(arr[0], Reserva):
+                for i, obj in enumerate(arr):
+                    result_dict[i] = {
+                        'codigo': obj.get_codigo(),
+                        'codigo_usuario': obj.get_codigo_usuario(),
+                        'datetime_start': obj.get_datetime_start().strftime("%Y-%m-%d %H:%M:%S"),
+                        'datetime_end': obj.get_datetime_end().strftime("%Y-%m-%d %H:%M:%S"),
+                        'duracao': str(obj.get_datetime_end() - obj.get_datetime_start()),
+                        'falta':str(obj.get_datetime_start()-datetime.now()),
+                        'ativo': obj.get_ativo()
+                    }
+            elif isinstance(arr[0], Sala):
+                for i, obj in enumerate(arr):
+                    result_dict[i] = {
+                        'codigo': obj.get_codigo(),
+                        'capacidade': obj.get_capacidade(),
+                        'tipo': obj.get_tipo(),
+                        'descricao': obj.get_descricao(),
+                        'ativo': obj.get_ativo()
+                    }
+            elif isinstance(arr[0], User):
+                for i, obj in enumerate(arr):
+                    result_dict[i] = {
+                        'nome': obj.get_nome(),
+                        'email': obj.get_email(),
+                        'ativo': obj.get_ativo()
+                    }
+
+            return result_dict
+
 
         def __str__(self):
             string_values = ''.join([str(item) for item in self.__list_model])

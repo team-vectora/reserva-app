@@ -3,18 +3,17 @@
 
   {% block content_header %}
         <h1>Reservar Sala</h1>
-        <p>Utilize o formulário abaixo para reservar uma sala</p>
+        <p>Utilize o formulário abaixo para fazer uma reserva</p>
  {% endblock %}
 
   {% block content %}
-      <form action="/reservas">
+      <form action="/reservar-sala" method="post">
         <div class="mb-3">
           <label for="sala" class="form-label">Sala</label>
           <select class="form-select" id="sala" name="sala">
-            <option selected>Selecione a sala</option>
-            <option value="1">Sala 1</option>
-            <option value="2">Sala 2</option>
-            <option value="3">Sala 3</option>
+            {% for codigo, valor in salas.items() %}
+            <option value="{{ codigo }}">{{ codigo }}</option>
+          {% endfor %}
           </select>
         </div>
         <div class="mb-3">
