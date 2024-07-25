@@ -30,6 +30,9 @@ def cadastro():
     nome = request.form['nome']
     email = request.form['email']
     senha = request.form['password']
+    if not nome or not email or not senha:
+        mensagem = "Todos os campos são obrigatórios."
+        return render_template("cadastro.html", mensagem=mensagem)
     
     usuario = User(nome, email, senha)
     objs = User.objects()
