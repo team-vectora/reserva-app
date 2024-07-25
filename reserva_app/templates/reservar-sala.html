@@ -11,8 +11,8 @@
         <div class="mb-3">
           <label for="sala" class="form-label">Sala</label>
           <select class="form-select" id="sala" name="sala">
-            {% for codigo, valor in salas.items() %}
-            <option value="{{ codigo }}">{{ codigo }}</option>
+            {% for key, sala in salas.items() %}
+            <option value="{{ sala.codigo }}">{{ sala.codigo }}</option>
           {% endfor %}
           </select>
         </div>

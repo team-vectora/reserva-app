@@ -2,25 +2,29 @@
   {% block title %} Reservas {% endblock %}
 
   {% block content_header %}
-        <h1>Reserva 832</h1>
-        <p><b>Sala:</b> 3</p>
-        <p><b>Início:</b> 30/04/2024 - 14:00</p>
-        <p><b>Fim:</b> 30/04/2024 - 16:30</p>
-        <p>Reservado para Nome do Professor</p>
+        <h1>Reserva {{reserva}}</h1>
+        <p>Reserva feita por <b>{{professor}}</b></p>
+        <p><b>Sala:</b> {{sala}}</p>
+        <p><b>Tipo da sala:</b> {{tipo_sala}}</p>
+        <p><b>Descrição da sala:</b> {{descricao}}</p>
+        <p><b>Início:</b> {{inicio}}</p>
+        <p><b>Fim:</b> {{fim}}</p>
+        <p><b>Duração:</b> {{duracao}}</p>
+
  {% endblock %}
 
   {% block content %}
     <div class="col">
           <div class="col-md-6 mb-4">
+
             <h3>Gerar Comprovante</h3>
-            <p>Gere o pdf do comprovante de reserva.</p>
             <a href="" class="btn btn-dark">Gerar Comprovante</a>
           </div>
           <div class="col-md-6 mb-4">
             <h3>Cancelar Reserva</h3>
             <p>Você pode cancelar a reserva até 12 horas antes do início da reserva.</p>
-            <form action="">
-              <button class="btn btn-dark">Cancelar Reserva</button>
+            <form action="{{ url_for('deletar_reserva', id_reserva=reserva, id_criador_reserva=id_criador) }}" method="post">
+              <button type="submit" class="btn btn-dark">Cancelar Reserva</button>
             </form>
           </div>
     </div>

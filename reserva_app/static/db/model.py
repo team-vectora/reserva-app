@@ -108,6 +108,8 @@ class Model:
 
             arr = self.get_list()
             result_dict = {}
+            if len(arr) == 0:
+                return result_dict
 
             if isinstance(arr[0], Reserva):
                 for i, obj in enumerate(arr):
