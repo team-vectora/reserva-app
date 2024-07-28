@@ -7,11 +7,11 @@
  {% endblock %}
 
   {% block content %}
-      <form action="/cadastrar-sala">
+      <form action="/cadastrar-sala" method ="POST">
         <div class="mb-3">
             <label for="tipo" class="form-label">Tipo</label>
             <select class="form-select" id="tipo" name="tipo">
-                <option selected>Selecione um tipo</option>
+                <option value="0" selected>Selecione um tipo</option>
                 <option value="1">Laboratório de Informática</option>
                 <option value="2">Laboratório de Química</option>
                 <option value="3">Sala de Aula</option>

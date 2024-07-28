@@ -91,9 +91,18 @@ def reservas_post():
     lista = objs.get_dict()
     return render_template("reservas.html", reservas=lista)
 
-@app.route('/cadastrar-sala')
-@login_required
+@app.route('/cadastrar-sala', methods=["POST", "GET"])
+@login_required  
 def cadastrar_sala():
+    if request.method == "POST": 
+        tipo = request.form['tipo']
+        capacidade = request.form['capacidade']
+        descricao = request.form['descricao']
+
+        sala = Sala(tipo, capacidade, descricao) 
+        sala.save()
+        return redirect("/cadastrar-sala")
+
     return render_template("cadastrar-sala.html")
 
 
