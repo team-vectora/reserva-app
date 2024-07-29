@@ -37,7 +37,6 @@ class Model:
                 file.truncate()
 
         return self.__codigo
-    
 
     @staticmethod
     def _objects(child_class):
@@ -47,7 +46,7 @@ class Model:
             for line in file.readlines():
                 attr_list = line.strip().split(",")
                 model = child_class()
-                for (dir_attr, attr) in zip(model.__dir__(), attr_list):
+                for (dir_attr, attr) in zip(model.__dir__(set=True), attr_list):
                     model.__getattribute__(dir_attr)(attr)
                 list_model.append(model)
             return list_model
@@ -63,22 +62,23 @@ class Model:
             file.truncate()
 
     def __str__(self):
-        return ",".join(map(str, [attr for attr in self.__dir__(get=True)])) + "\n"
+        return ",".join(map(self.__format_to_csv, [attr for attr in self.__dir__(get=True)])) + "\n"
 
-    def __dir__(self, get=False):
+    @staticmethod
+    def __format_to_csv(value):
+        return str(value).replace(",", Column.char_field.CHAR_REPLACE_COMMA)
+
+    def __dir__(self, get=False, set=False):
         dir_attr = super().__dir__()
+
         if get:
             return [self.__getattribute__(attr)() for attr in dir_attr
-                    if not any([
-                    attr.startswith("_"),
-                    attr.startswith("set"),
-                    attr in ["table_name", "exclude", "save", "objects", "ListModel"]])]
+                    if attr.startswith("get")]
+        if set:
+            return [attr for attr in dir_attr
+                    if attr.startswith("set")]
 
-        return [attr for attr in dir_attr
-                if not any([
-                attr.startswith("_"),
-                attr.startswith("get"),
-                attr in ["table_name", "exclude", "save", "objects", "ListModel"]])]
+        return dir_attr
 
     class ListModel:
         def __init__(self, list_model=None):
@@ -87,7 +87,7 @@ class Model:
         def append(self, value):
             self.__list_model.append(value)
 
-        def where(self, key=None, value=None):
+        def where(self, key=None, value=None) -> list:
             if type(key) is not str:
                 list_model = [
                     item
@@ -98,11 +98,11 @@ class Model:
                 return list_model
 
             list_model = [item for item in self.__list_model if getattr(item, key)() == value]
-            return list_model if key != "get_codigo" else list_model[0]
+            return list_model if key != "get_codigo" or list_model == [] else list_model[0]
 
         def get_list(self):
             return self.__list_model
-        
+
         def get_dict(self):
             from reserva_app.models import Reserva, Sala, User
 
@@ -119,7 +119,7 @@ class Model:
                         'datetime_start': obj.get_datetime_start().strftime("%Y-%m-%d %H:%M:%S"),
                         'datetime_end': obj.get_datetime_end().strftime("%Y-%m-%d %H:%M:%S"),
                         'duracao': str(obj.get_datetime_end() - obj.get_datetime_start()),
-                        'falta':str(obj.get_datetime_start()-datetime.now()),
+                        'falta': str(obj.get_datetime_start() - datetime.now()),
                         'ativo': obj.get_ativo()
                     }
             elif isinstance(arr[0], Sala):
@@ -140,7 +140,6 @@ class Model:
                     }
 
             return result_dict
-
 
         def __str__(self):
             string_values = ''.join([str(item) for item in self.__list_model])
@@ -164,17 +163,10 @@ class Column:
         CHAR_REPLACE_COMMA = "///COMMA///"
 
         def __init__(self, value):
-            super().__init__(self.__replace_comma(str(value)), 1)
+            super().__init__(self.__replace_char_comma(str(value)), 1)
 
         def set_value(self, value):
-            super().set_value(self.__replace_comma(str(value)))
-
-        def get_value(self):
-            return self.__replace_comma(super().get_value())
-
-        @staticmethod
-        def __replace_comma(value):
-            return value.replace(",", Column.char_field.CHAR_REPLACE_COMMA)
+            super().set_value(self.__replace_char_comma(str(value)))
 
         @staticmethod
         def __replace_char_comma(value):
@@ -205,15 +197,29 @@ class Column:
 
     class datetime_field(ColumnBase):
         def __init__(self, value):
-            value = datetime.strptime(value, "%Y-%m-%d %H:%M:%S") if type(value) is str \
-                else value.strftime("%Y-%m-%d %H:%M:%S") if value \
-                else value
+            if type(value) is str:
+                if "T" in value:
+                    value = value.replace("T", " ")
+                if value.count(":") == 1:
+                    value += ":00"
+
+                value = datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
+            elif type(value) is datetime:
+                value.strftime("%Y-%m-%d %H:%M:%S")
 
             super().__init__(value, 4)
 
         def set_value(self, value):
-            value = datetime.strptime(value, "%Y-%m-%d %H:%M:%S") if type(value) is str \
-                else value.strftime("%Y-%m-%d %H:%M:%S")
+            if type(value) is str:
+                if "T" in value:
+                    value = value.replace("T", " ")
+                if value.count(":") == 1:
+                    value += ":00"
+
+                value = datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
+            elif type(value) is datetime:
+                value.strftime("%Y-%m-%d %H:%M:%S")
+
             super().set_value(value)
 
         def get_value(self) -> str:

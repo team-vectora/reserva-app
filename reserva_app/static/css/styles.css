@@ -1,0 +1,8 @@
+.popup {
+    position: absolute;
+    background-color: lightcoral;
+    border: 2px solid crimson;
+    top: 4rem;
+    left: 50%;
+    transform: translateX(-50%);
+}

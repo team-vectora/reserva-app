@@ -6,23 +6,46 @@
  {% endblock %}
 
   {% block content %}
+    <form action="{{ url_for('reservas') }}" method="POST" class="row mt-4">
       <div class="col">
-        <input type="text" class="form-control" placeholder="First name" aria-label="First name">
+        <input type="datetime-local" class="form-control" placeholder="Start" aria-label="Start" name="start">
       </div>
       <div class="col">
-        <input type="text" class="form-control" placeholder="Last name" aria-label="Last name">
+        <input type="datetime-local" class="form-control" placeholder="End" aria-label="End" name="end">
       </div>
       <div class="col">
         <button class="btn btn-dark" type="submit">Filtrar</button>
       </div>
-
-      </div>
-      {% for key, reserva in reservas.items() %}
-        <div class="reserva-item d-flex flex-column align-items-center justify-content-center p-3 border rounded mb-3">
-          <p><strong>Duração:</strong> {{ reserva.duracao }} <strong>Início:</strong> {{ reserva.datetime_start }} <strong>Fim:</strong> {{ reserva.datetime_end }} <strong>Faltam:</strong> {{ reserva.falta }}</p>
-          <a class="btn btn-dark" href="{{ url_for('detalhe_reserva', id=reserva.codigo) }}">Mais detalhes</a>
-        </div>
-      {% endfor %}
-  
-      
+    </form>
+    <div class="table-responsive mt-4">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Sala</th>
+              <th scope="col">Duração</th>
+              <th scope="col">Início</th>
+              <th scope="col">Fim</th>
+              <th scope="col">Faltam</th>
+              <th scope="col">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for reserva in reservas %}
+              <tr>
+                <td>{{ reserva.nome_sala() }}</td>
+                <td>{{ reserva.duracao() }}</td>
+                <td>{{ reserva.get_datetime_start() }}</td>
+                <td>{{ reserva.get_datetime_end() }}</td>
+                <td>{{ (reserva.tempo_restante().days * -1) }} dia(s)</td>
+                <td>
+                  <a class="btn btn-dark" href="{{ url_for('detalhe_reserva', id=reserva.get_codigo()) }}">Mais detalhes</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if not reservas %}
+          <h3 class="mt-4">Nada encontrado</h3>
+        {% endif %}
+    </div>
  {% endblock %}

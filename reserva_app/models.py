@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from reserva_app.static.db.model import Model, Column
 
@@ -94,6 +94,15 @@ class Reserva(Model):
     def get_ativo(self) -> bool:
         return self.__ativo.get_value()
 
+    def tempo_restante(self) -> timedelta:
+        return datetime.now() - self.get_datetime_start()
+
+    def duracao(self) -> timedelta:
+        return self.get_datetime_end() - self.get_datetime_start()
+
+    def nome_sala(self) -> str:
+        return Sala.objects().where("get_codigo", self.get_codigo_sala()).nome_sala()
+
     @staticmethod
     def objects() -> Model.ListModel | Model:
         return Model._objects(Reserva)
@@ -145,16 +154,21 @@ class User(Model):
     def exclude(id_to_exclude: int):
         User._exclude(id_to_exclude, User)
 
+    @staticmethod
+    def autenticate(email: str, senha: str) -> Model | bool:
+        user = User.objects().where(("get_email", "get_senha"), (email, senha)) or False
+        return user if not user else user[0]
+
 
 class Sala(Model):
-    table_name = 'sala.csv'
-
-    '''
-        TIPOS DA SALA: 
+    """
+        TIPOS DA SALA:
             1 = LABORATORIO DE INFORMATICA
-            2 = LABORATORIO DE QUIMICA
+            2 = "LABORATORIO DE QUIMICA"
             3 = SALA DE AULA
-    '''
+    """
+
+    table_name = 'sala.csv'
 
     def __init__(self, capacidade: int = 0, tipo: int = 0, descricao: str = '', ativo:bool =True):
         super().__init__(Sala)
@@ -162,6 +176,7 @@ class Sala(Model):
         self.__ativo = Column.boolean_field(ativo)
         self.__tipo = Column.integer_field(tipo)
         self.__descricao = Column.char_field(descricao)
+        self.__tipos_sala = ["LABORATORIO DE INFORMATICA", "LABORATORIO DE QUIMICA", "SALA DE AULA"]
 
     def set_capacidade(self, capacidade: int):
         self.__capacidade.set_value(capacidade)
@@ -186,6 +201,11 @@ class Sala(Model):
 
     def get_ativo(self) -> bool:
         return self.__ativo.get_value()
+
+    def nome_sala(self) -> str:
+        objs = Sala.objects().where("get_tipo", self.get_tipo())
+        id_sala = objs.index([sala for sala in objs if sala.get_codigo() == self.get_codigo()][0]) + 1
+        return self.__tipos_sala[self.get_tipo() - 1] + ' ' + str(id_sala)
 
     @staticmethod
     def objects() -> Model.ListModel | Model:

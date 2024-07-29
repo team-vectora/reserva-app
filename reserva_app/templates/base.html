@@ -43,6 +43,12 @@
         </div>
     </nav>
 
+    {% if mensagem %}
+        <div class="alert alert-{{ alert or 'danger' }} position-absolute" style="top: 4rem; left: 50%; transform: translateX(-50%);" role="alert">
+            {{mensagem}}
+        </div>
+    {% endif %}
+
     {% block body %}
     {% endblock %}
 

@@ -7,13 +7,13 @@
  {% endblock %}
 
   {% block content %}
-      <form action="/reservar-sala" method="post">
+      <form action="{{ url_for('reservar_sala') }}" method="POST">
         <div class="mb-3">
           <label for="sala" class="form-label">Sala</label>
           <select class="form-select" id="sala" name="sala">
-            {% for key, sala in salas.items() %}
-            <option value="{{ sala.codigo }}">{{ sala.codigo }}</option>
-          {% endfor %}
+            {% for sala in salas %}
+              <option value="{{ sala.get_codigo() }}">{{ sala.nome_sala() }}</option>
+            {% endfor %}
           </select>
         </div>
         <div class="mb-3">

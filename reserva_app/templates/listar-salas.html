@@ -20,18 +20,18 @@
               </tr>
             </thead>
             <tbody>
-              {% for sala in salas%}
+              {% for sala in salas %}
                 <tr>
-                  <td>sala.codigo</td>
-                  <td>sala.tipo</td>
-                  <td>sala.descricao</td>
-                  <td>sala.capacidade</td>
-                  <td>sala.ativa</td>
+                  <td>{{ sala.get_codigo() }}</td>
+                  <td>{{ sala.get_tipo() }}</td>
+                  <td>{{ sala.get_descricao() }}</td>
+                  <td>{{ sala.get_capacidade() }}</td>
+                  <td>{{ sala.get_ativo()  }}</td>
                   <td>
                     <form action="">
-                      <button class="btn btn-sm btn-dark" type="submit" formaction="/cadastrar-sala?tipo={{ sala.tipo }}&capacidade={{ sala.capacidade }}&descricao={{ sala.descricao }}">Editar</button>
-                      <button class="btn btn-sm btn-dark" type="submit" formaction="/reservas.html">Desativar</button>
-                      <button class="btn btn-sm btn-dark" type="submit" formaction="/reservas.html">Excluir</button>
+                      <button class="btn btn-sm btn-dark" type="submit" formaction="/cadastrar-sala?tipo={{ sala.get_tipo() }}&capacidade={{ sala.get_capacidade() }}&descricao={{ sala.get_descricao() }}">Editar</button>
+                      <button class="btn btn-sm btn-dark" type="submit" formaction="/reservas">Desativar</button>
+                      <button class="btn btn-sm btn-dark" type="submit" formaction="/reservas">Excluir</button>
                     </form>
                   </td>
                 </tr>
