@@ -94,14 +94,14 @@ class Model:
                     for item in self.__list_model
                     if all(getattr(item, key_item)() == value_item for key_item, value_item in zip(key, value))
                 ]
+            else:
+                list_model = [item for item in self.__list_model if getattr(item, key)() == value]
 
-                return list_model
-
-            list_model = [item for item in self.__list_model if getattr(item, key)() == value]
             if list_model and key == "get_codigo":
                 return list_model[0]
 
             return list_model
+
 
         def get_list(self):
             return self.__list_model

@@ -30,26 +30,23 @@ def home():
 
 @app.route('/cadastro', methods=["POST", "GET"])
 def cadastro():
-    mensagem = ""
     if request.method == "POST":
         nome = request.form['nome'].strip()
         email = request.form['email'].strip()
         senha = request.form['password'].strip()
         if not all([nome, email, senha]):
-            mensagem = "Todos os campos são obrigatórios."
-            return render_template("cadastro.html", mensagem=mensagem)
+            return render_template("cadastro.html", mensagem="Preencha todos os campos")
 
         usuario = User(nome, email, senha)
         objs = User.objects()
         if objs is not None:
             if objs.where("get_email", email):
-                mensagem = "Endereço de email já cadastrado."
-                return render_template("cadastro.html", mensagem=mensagem)
+                return render_template("cadastro.html", mensagem="Endereço de email já cadastrado.")
 
         usuario.save()
         return redirect(url_for("login"))
 
-    return render_template("cadastro.html", mensagem=mensagem)
+    return render_template("cadastro.html")
 
 
 @app.route('/login', methods=["POST", "GET"])
@@ -103,8 +100,10 @@ def listar_salas():
 def editar_sala(sala_id):
     return render_template("listar-salas.html")
 
-    
 
+
+
+@app.route('/listar-salas/<sala_id>/excluir')
 
 @app.route('/listar-salas/<sala_id>/excluir')
 @login_required
@@ -134,6 +133,9 @@ def reservar_sala():
         if not all([inicio, fim]):
             return render_template("reservar-sala.html", salas=salas, mensagem="Preencha todos os campos")
 
+        inicio = datetime.strptime(inicio, "%Y-%m-%dT%H:%M")
+        fim = datetime.strptime(fim, "%Y-%m-%dT%H:%M")
+
         reservas_sala = Reserva.objects().where("get_codigo_sala", codigo_sala)
         if [reserva for reserva in reservas_sala
                 if inicio <= reserva.get_datetime_start() <= fim
@@ -142,7 +144,9 @@ def reservar_sala():
 
         reserva = Reserva(get_id_usuario(), codigo_sala, inicio, fim)
 
-        if reserva.duracao().total_seconds() <= 0 or reserva.tempo_restante().total_seconds() <= 0:
+        if 0 > reserva.tempo_restante().total_seconds() > -6:
+            return render_template("reservar-sala.html", salas=salas, mensagem="A ")
+        if reserva.duracao().total_seconds() <= 0 or reserva.tempo_restante().total_seconds() >= 0:
             return render_template("reservar-sala.html", salas=salas, mensagem="Horário inválido")
         if reserva.duracao().total_seconds() > 28800:
             return render_template("reservar-sala.html", salas=salas,
@@ -175,31 +179,16 @@ def reservas():
     return render_template("reservas.html", reservas=reservas_objects)
 
 
-@app.route('/detalhe-reserva')
-def detalhe_reserva():
-    return render_template("detalhe-reserva.html")
-
-
-@app.route('/detalhe_reserva/<id>', methods=["GET"])
+@app.route('/detalhe_reserva/<reserva_id>', methods=["GET"])
 @login_required
-def detalhe_reserva_id(id):
-    arr_reserva = str(Reserva.objects().where("get_codigo", int(id))).split(',')
-    arr_user = str(User.objects().where("get_codigo", int(arr_reserva[0]))).split(',')
-    arr_sala = str(Sala.objects().where("get_codigo", int(arr_reserva[1]))).split(',')
-
-    incio_time = datetime.strptime(arr_reserva[2], '%Y-%m-%d %H:%M:%S')
-    fim_time = datetime.strptime(arr_reserva[3], '%Y-%m-%d %H:%M:%S')
-    duracao = fim_time - incio_time
-
-    tipos = {
-        1: "Laboratório de Informática",
-        2: "Laboratório de Química",
-        3: "Sala de Aula"
-    }
+def detalhe_reserva(reserva_id: int):
+    reserva = Reserva.objects().where("get_codigo", reserva_id)
+    usuario = User.objects().where("get_codigo", reserva.get_codigo_usuario())
+    sala = Sala.objects().where("get_codigo", reserva.get_codigo_sala())
 
     return render_template("detalhe-reserva.html",
-                           reserva=id,
-                           duracao=duracao,
+                           reserva=reserva_id,
+                           duracao=reserva.duracao(),
                            tipo_sala=tipos[int(arr_sala[1])],
                            id_criador=arr_user[4],
                            descricao=arr_sala[2],
