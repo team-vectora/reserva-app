@@ -77,6 +77,13 @@ def cadastrar_sala():
         capacidade = request.form['capacidade']
         descricao = request.form['descricao']
 
+        if not all([tipo, capacidade, descricao]):
+            return render_template("cadastrar-sala.html", mensagem="Preencha todos os campos")
+        if tipo == 0:
+            return render_template("cadastrar-sala.html", mensagem="Selecione o tipo da sala")
+        if int(capacidade) <= 0:
+            return render_template("cadastrar-sala.html", mensagem="Adicione uma capacidade válida")
+
         sala = Sala(tipo, capacidade, descricao)
         sala.save()
         return redirect(url_for("cadastrar_sala"))
@@ -87,7 +94,8 @@ def cadastrar_sala():
 @app.route('/listar-salas')
 @login_required
 def listar_salas():
-    return render_template("listar-salas.html")
+    sala = Sala.objects().get_list()
+    return render_template("listar-salas.html", salas=sala)
 
 
 @app.route('/reservar-sala', methods=["POST", "GET"])
