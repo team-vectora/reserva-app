@@ -6,9 +6,9 @@
         <p>Reserva feita por <b>{{ usuario.get_nome() }}</b></p>
         <p><b>Sala:</b> {{ sala.nome_sala() }}</p>
         <p><b>Tipo da sala:</b> {{ sala.tipo_sala() }}</p>
-        <p><b>Descrição da sala:</b> {{ sala.descricao() }}</p>
+        <p><b>Descrição da sala:</b> {{ sala.get_descricao() }}</p>
         <p><b>Início:</b> {{ reserva.get_datetime_start() }}</p>
-        <p><b>Fim:</b> {{ reserva.get_datetime_en() }}</p>
+        <p><b>Fim:</b> {{ reserva.get_datetime_end() }}</p>
         <p><b>Duração:</b> {{ reserva.duracao() }}</p>
 
  {% endblock %}
@@ -23,7 +23,7 @@
           <div class="col-md-6 mb-4">
             <h3>Cancelar Reserva</h3>
             <p>Você pode cancelar a reserva até 12 horas antes do início da reserva.</p>
-            <form action="{{ url_for('cancelar_reserva', id_reserva=reserva) }}" method="post">
+            <form action="{{ url_for('cancelar_reserva', reserva_id=reserva.get_codigo()) }}" method="POST">
               <button type="submit" class="btn btn-dark">Cancelar Reserva</button>
             </form>
           </div>

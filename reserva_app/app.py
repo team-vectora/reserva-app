@@ -101,10 +101,6 @@ def editar_sala(sala_id):
     return render_template("listar-salas.html")
 
 
-
-
-@app.route('/listar-salas/<sala_id>/excluir')
-
 @app.route('/listar-salas/<sala_id>/excluir')
 @login_required
 def excluir_sala(sala_id):
@@ -144,8 +140,8 @@ def reservar_sala():
 
         reserva = Reserva(get_id_usuario(), codigo_sala, inicio, fim)
 
-        if 0 > reserva.tempo_restante().total_seconds() > -6:
-            return render_template("reservar-sala.html", salas=salas, mensagem="A ")
+        if 0 > reserva.tempo_restante().total_seconds() > (-6 * 3600) :
+            return render_template("reservar-sala.html", salas=salas, mensagem="A sala deve ser reservada com 6 horas de antecedência")
         if reserva.duracao().total_seconds() <= 0 or reserva.tempo_restante().total_seconds() >= 0:
             return render_template("reservar-sala.html", salas=salas, mensagem="Horário inválido")
         if reserva.duracao().total_seconds() > 28800:
@@ -175,37 +171,53 @@ def reservas():
         reservas_objects = [reserva for reserva in objects
                             if start <= reserva.get_datetime_start() <= end
                             and start <= reserva.get_datetime_end() <= end]
-
+    
+    mensagem = request.cookies.get("mensagem")
+    if mensagem:
+        alert = request.cookies.get("alert")
+        response = make_response(render_template("reservas.html", reservas=reservas_objects, mensagem=mensagem, alert=alert))
+        response.delete_cookie("mensagem")
+        if alert: response.delete_cookie("alert")
+        return response
+    
     return render_template("reservas.html", reservas=reservas_objects)
 
 
 @app.route('/detalhe_reserva/<reserva_id>', methods=["GET"])
 @login_required
-def detalhe_reserva(reserva_id: int):
-    reserva = Reserva.objects().where("get_codigo", reserva_id)
+def detalhe_reserva(reserva_id):
+    reserva = Reserva.objects().where("get_codigo", int(reserva_id))
     usuario = User.objects().where("get_codigo", reserva.get_codigo_usuario())
     sala = Sala.objects().where("get_codigo", reserva.get_codigo_sala())
 
-    return render_template("detalhe-reserva.html",
-                           reserva=reserva_id,
-                           duracao=reserva.duracao(),
-                           tipo_sala=tipos[int(arr_sala[1])],
-                           id_criador=arr_user[4],
-                           descricao=arr_sala[2],
-                           professor=arr_user[0],
-                           sala=arr_reserva[4],
-                           inicio=arr_reserva[2],
-                           fim=arr_reserva[3])
+    return render_template("detalhe-reserva.html", reserva=reserva, usuario=usuario, sala=sala)
 
 
-@app.route('/deletar-reserva/<id_reserva>/<id_criador_reserva>', methods=['POST'])
-def deletar_reserva(id_reserva, id_criador_reserva):
-    id_usuario = request.cookies.get("userid")
-    if id_criador_reserva == id_usuario:
-        Reserva.exclude(id_reserva)
-        return redirect(url_for('reservas'))
-    return None
+@app.route('/cancelar-reserva/<reserva_id>', methods=['POST'])
+def cancelar_reserva(reserva_id):
+    reserva = Reserva.objects().where("get_codigo", int(reserva_id))
+    response = make_response(redirect(url_for('reservas')))
+    response.set_cookie("mensagem", "O ocorreu um erro")
 
+    if reserva.tempo_restante().total_seconds() >= (-12 * 3600) :
+        Reserva.exclude(reserva_id)
+        response.set_cookie("mensagem", "A reserva só pode ser cancelada com 12 horas de antecedência")
+
+    if get_id_usuario() == reserva.get_codigo_usuario():
+        Reserva.exclude(reserva_id)
+        response.set_cookie("mensagem", "Reserva cancelada com sucesso")
+        response.set_cookie("alert", "primary")
+    
+    return response
+
+
+@app.route('/logout')
+def logout():
+    response = make_response(redirect(url_for("login")))
+    response.delete_cookie("userid")
+
+    return response
+    
 
 if __name__ == '__main__':
     app.run(debug=True)

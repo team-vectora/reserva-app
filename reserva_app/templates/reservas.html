@@ -38,7 +38,7 @@
                 <td>{{ reserva.get_datetime_end() }}</td>
                 <td>{{ (reserva.tempo_restante().days * -1) }} dia(s)</td>
                 <td>
-                  <a class="btn btn-dark" href="{{ url_for('detalhe_reserva', id=reserva.get_codigo()) }}">Mais detalhes</a>
+                  <a class="btn btn-dark" href="{{ url_for('detalhe_reserva', reserva_id=reserva.get_codigo()) }}">Mais detalhes</a>
                 </td>
               </tr>
             {% endfor %}
