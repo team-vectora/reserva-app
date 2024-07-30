@@ -97,6 +97,20 @@ def listar_salas():
     sala = Sala.objects().get_list()
     return render_template("listar-salas.html", salas=sala)
 
+@app.route('/listar-salas/<id>/editar')
+@login_required
+def editar_sala():
+    return render_template("listar-salas.html")
+
+@app.route('/listar-salas/<id>/excluir')
+@login_required
+def excluir_sala():
+    return render_template("listar-salas.html")
+
+@app.route('/listar-salas/<id>/desativar')
+@login_required
+def desativar_sala():
+    return render_template("listar-salas.html")
 
 @app.route('/reservar-sala', methods=["POST", "GET"])
 @login_required
