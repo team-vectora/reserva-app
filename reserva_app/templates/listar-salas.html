@@ -30,7 +30,7 @@
                   <td>
                     <form action="">
                       <button class="btn btn-sm btn-dark" type="submit" formaction="/cadastrar-sala?tipo={{ sala.get_tipo() }}&capacidade={{ sala.get_capacidade() }}&descricao={{ sala.get_descricao() }}">Editar</button>
-                      <button class="btn btn-sm btn-dark" type="submit" formaction="/listar-salas/{{sala.get_codigo()}}/desativar">Desativar</button>
+                      <button class="btn btn-sm btn-dark" type="submit" formaction="{{url_for("desativar_sala", sala_id=sala.get_codigo())}}">Desativar</button>
                       <button class="btn btn-sm btn-dark" type="submit" formaction="/listar-salas">Excluir</button>
                     </form>
                   </td>

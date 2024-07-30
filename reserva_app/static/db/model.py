@@ -98,7 +98,10 @@ class Model:
                 return list_model
 
             list_model = [item for item in self.__list_model if getattr(item, key)() == value]
-            return list_model if key != "get_codigo" or list_model == [] else list_model[0]
+            if list_model and key == "get_codigo":
+                return list_model[0]
+
+            return list_model
 
         def get_list(self):
             return self.__list_model

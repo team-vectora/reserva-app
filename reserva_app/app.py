@@ -115,8 +115,7 @@ def excluir_sala(sala_id):
 @app.route('/listar-salas/<sala_id>/desativar')
 @login_required
 def desativar_sala(sala_id):
-    sala = Sala.objects()
-    sala.where("get_codigo", sala_id)
+    sala = Sala.objects().where("get_codigo", int(sala_id))
     sala.set_ativo(False)
     sala.save()
     return redirect(url_for("listar_salas"))
