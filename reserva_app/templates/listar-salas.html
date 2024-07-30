@@ -23,10 +23,10 @@
               {% for sala in salas %}
                 <tr>
                   <td>{{ sala.get_codigo() }}</td>
-                  <td>{{ sala.get_tipo() }}</td>
+                  <td>{{ sala.tipo_sala() }}</td>
                   <td>{{ sala.get_descricao() }}</td>
                   <td>{{ sala.get_capacidade() }}</td>
-                  <td>{{ sala.get_ativo()  }}</td>
+                  <td>{{ "SIM" if sala.get_ativo() else "NÃO" }} </td>
                   <td>
                     <form action="">
                       <button class="btn btn-sm btn-dark" type="submit" formaction="/cadastrar-sala?tipo={{ sala.get_tipo() }}&capacidade={{ sala.get_capacidade() }}&descricao={{ sala.get_descricao() }}">Editar</button>

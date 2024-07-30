@@ -84,7 +84,7 @@ def cadastrar_sala():
         if int(capacidade) <= 0:
             return render_template("cadastrar-sala.html", mensagem="Adicione uma capacidade válida")
 
-        sala = Sala(tipo, capacidade, descricao)
+        sala = Sala(capacidade, tipo, descricao)
         sala.save()
         return redirect(url_for("cadastrar_sala"))
 

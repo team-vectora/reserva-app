@@ -206,6 +206,10 @@ class Sala(Model):
         objs = Sala.objects().where("get_tipo", self.get_tipo())
         id_sala = objs.index([sala for sala in objs if sala.get_codigo() == self.get_codigo()][0]) + 1
         return self.__tipos_sala[self.get_tipo() - 1] + ' ' + str(id_sala)
+    
+    def tipo_sala(self) -> str:
+        return self.__tipos_sala[self.get_tipo() - 1]
+
 
     @staticmethod
     def objects() -> Model.ListModel | Model:
