@@ -3,7 +3,7 @@
 
 {% block content %}
     <h5 class="card-title">Cadastro</h5>
-    <form class="card-text" action="/cadastro" method="post">
+    <form class="card-text" action="{{ url_for('cadastro') }}" method="POST">
       <div class="mb-3">
         <label for="nome" class="form-label">Nome</label>
         <input type="text" class="form-control" name="nome" id="nome">
@@ -18,7 +18,7 @@
       </div>
       <div class="d-flex justify-content-between">
           <button type="submit" class="btn btn-dark">Cadastrar</button>
-          <a class="btn btn-light" href="/login">Entrar</a>
+          <a class="btn btn-light" href="{{ url_for('login') }}">Entrar</a>
       </div>
     </form>
 {% endblock %}

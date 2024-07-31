@@ -134,14 +134,22 @@ def reservar_sala():
 
         reservas_sala = Reserva.objects().where("get_codigo_sala", codigo_sala)
         if [reserva for reserva in reservas_sala
-                if inicio <= reserva.get_datetime_start() <= fim
-                or inicio <= reserva.get_datetime_end() <= fim]:
-            return render_template("reservar-sala.html", salas=salas, mensagem="Essa sala já esta reservada nesse horário")
+                if inicio <= reserva.get_datetime_start(False) <= fim
+                or inicio <= reserva.get_datetime_end(False) <= fim]:
+            return render_template(
+                "reservar-sala.html",
+                salas=salas,
+                mensagem="Essa sala já esta reservada nesse horário"
+            )
 
         reserva = Reserva(get_id_usuario(), codigo_sala, inicio, fim)
 
-        if 0 > reserva.tempo_restante().total_seconds() > (-6 * 3600) :
-            return render_template("reservar-sala.html", salas=salas, mensagem="A sala deve ser reservada com 6 horas de antecedência")
+        if 0 > reserva.tempo_restante().total_seconds() > (-6 * 3600):
+            return render_template(
+                "reservar-sala.html",
+                salas=salas,
+                mensagem="A sala deve ser reservada com 6 horas de antecedência"
+            )
         if reserva.duracao().total_seconds() <= 0 or reserva.tempo_restante().total_seconds() >= 0:
             return render_template("reservar-sala.html", salas=salas, mensagem="Horário inválido")
         if reserva.duracao().total_seconds() > 28800:
@@ -169,15 +177,24 @@ def reservas():
 
         objects = Reserva.objects().where("get_codigo_usuario", get_id_usuario())
         reservas_objects = [reserva for reserva in objects
-                            if start <= reserva.get_datetime_start() <= end
-                            and start <= reserva.get_datetime_end() <= end]
+                            if start <= reserva.get_datetime_start(False) <= end
+                            and start <= reserva.get_datetime_end(False) <= end]
     
     mensagem = request.cookies.get("mensagem")
     if mensagem:
         alert = request.cookies.get("alert")
-        response = make_response(render_template("reservas.html", reservas=reservas_objects, mensagem=mensagem, alert=alert))
+        response = make_response(
+            render_template(
+                "reservas.html",
+                reservas=reservas_objects,
+                mensagem=mensagem,
+                alert=alert
+            )
+        )
         response.delete_cookie("mensagem")
-        if alert: response.delete_cookie("alert")
+        if alert:
+            response.delete_cookie("alert")
+
         return response
     
     return render_template("reservas.html", reservas=reservas_objects)
@@ -197,17 +214,22 @@ def detalhe_reserva(reserva_id):
 def cancelar_reserva(reserva_id):
     reserva = Reserva.objects().where("get_codigo", int(reserva_id))
     response = make_response(redirect(url_for('reservas')))
-    response.set_cookie("mensagem", "O ocorreu um erro")
 
-    if reserva.tempo_restante().total_seconds() >= (-12 * 3600) :
-        Reserva.exclude(reserva_id)
+    if 0 > reserva.tempo_restante().total_seconds() >= (-43200):
         response.set_cookie("mensagem", "A reserva só pode ser cancelada com 12 horas de antecedência")
+
+        return response
 
     if get_id_usuario() == reserva.get_codigo_usuario():
         Reserva.exclude(reserva_id)
         response.set_cookie("mensagem", "Reserva cancelada com sucesso")
-        response.set_cookie("alert", "primary")
-    
+        response.set_cookie("alert", "success")
+
+        return response
+
+    response.set_cookie("mensagem", "O ocorreu um erro")
+    response.set_cookie("alert", "danger")
+
     return response
 
 

@@ -54,11 +54,12 @@ Por fim, para EXCLUIR basta usar o metodo .exclude, que também é estático
 class Reserva(Model):
     table_name = 'reserva.csv'
 
-    def __init__(self, codigo_usuario: int = 0, codigo_sala: int = 0, datetime_start: datetime | str = None,
-                 datetime_end: datetime | str = None, ativo: bool = True):
+    def __init__(self, codigo_usuario: int = 0, codigo_sala: int = 0, datetime_start: datetime = None,
+                 datetime_end: datetime = None, ativo: bool = True):
         super().__init__(Reserva)
         self.__codigo_usuario = Column.integer_field(codigo_usuario)
         self.__codigo_sala = Column.integer_field(codigo_sala)
+        print("ENTRANDO no colum com: " + str(datetime))
         self.__datetime_start = Column.datetime_field(datetime_start)
         self.__datetime_end = Column.datetime_field(datetime_end)
         self.__ativo = Column.boolean_field(ativo)
@@ -78,15 +79,18 @@ class Reserva(Model):
     def set_datetime_start(self, datetime_start: datetime):
         self.__datetime_start.set_value(datetime_start)
 
-    def get_datetime_start(self) -> datetime:
-
-        return datetime.strptime(self.__datetime_start.get_value(), "%Y-%m-%d %H:%M:%S")
+    def get_datetime_start(self, to_string=True) -> datetime | str:
+        if to_string:
+            return self.__datetime_start.get_value()
+        return datetime.strptime(self.__datetime_start.get_value(), Column.datetime_field.format)
 
     def set_datetime_end(self, datetime_end: datetime):
         self.__datetime_end.set_value(datetime_end)
 
-    def get_datetime_end(self) -> datetime:
-        return datetime.strptime(self.__datetime_end.get_value(), "%Y-%m-%d %H:%M:%S")
+    def get_datetime_end(self, to_string=True) -> datetime | str:
+        if to_string:
+            return self.__datetime_end.get_value()
+        return datetime.strptime(self.__datetime_end.get_value(), Column.datetime_field.format)
 
     def set_ativo(self, ativo: bool):
         self.__ativo.set_value(ativo)
@@ -95,10 +99,10 @@ class Reserva(Model):
         return self.__ativo.get_value()
 
     def tempo_restante(self) -> timedelta:
-        return datetime.now() - self.get_datetime_start()
+        return datetime.now() - self.get_datetime_start(False)
 
     def duracao(self) -> timedelta:
-        return self.get_datetime_end() - self.get_datetime_start()
+        return self.get_datetime_end(False) - self.get_datetime_start(False)
 
     def nome_sala(self) -> str:
         return Sala.objects().where("get_codigo", self.get_codigo_sala()).nome_sala()

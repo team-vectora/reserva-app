@@ -28,6 +28,7 @@ class Model:
         with open(self.__table_name, mode, encoding='latin-1') as file:
             if self.__codigo == 0:
                 self.__codigo = self._generate_id()
+                print("dando o str com " + str(self))
                 file.write(str(self))
             else:
                 readline = file.readlines()
@@ -62,16 +63,17 @@ class Model:
             file.truncate()
 
     def __str__(self):
-        return ",".join(map(self.__format_to_csv, [attr for attr in self.__dir__(get=True)])) + "\n"
-
-    @staticmethod
-    def __format_to_csv(value):
-        return str(value).replace(",", Column.char_field.CHAR_REPLACE_COMMA)
+        return ",".join(map(str, [attr for attr in self.__dir__(get=True)])) + "\n"
 
     def __dir__(self, get=False, set=False):
         dir_attr = super().__dir__()
 
         if get:
+            for attr in dir_attr:
+                if attr.startswith("get"):
+                    print(attr)
+                    print(self.__getattribute__(attr)())
+
             return [self.__getattribute__(attr)() for attr in dir_attr
                     if attr.startswith("get")]
         if set:
@@ -102,47 +104,8 @@ class Model:
 
             return list_model
 
-
         def get_list(self):
             return self.__list_model
-
-        def get_dict(self):
-            from reserva_app.models import Reserva, Sala, User
-
-            arr = self.get_list()
-            result_dict = {}
-            if len(arr) == 0:
-                return result_dict
-
-            if isinstance(arr[0], Reserva):
-                for i, obj in enumerate(arr):
-                    result_dict[i] = {
-                        'codigo': obj.get_codigo(),
-                        'codigo_usuario': obj.get_codigo_usuario(),
-                        'datetime_start': obj.get_datetime_start().strftime("%Y-%m-%d %H:%M:%S"),
-                        'datetime_end': obj.get_datetime_end().strftime("%Y-%m-%d %H:%M:%S"),
-                        'duracao': str(obj.get_datetime_end() - obj.get_datetime_start()),
-                        'falta': str(obj.get_datetime_start() - datetime.now()),
-                        'ativo': obj.get_ativo()
-                    }
-            elif isinstance(arr[0], Sala):
-                for i, obj in enumerate(arr):
-                    result_dict[i] = {
-                        'codigo': obj.get_codigo(),
-                        'capacidade': obj.get_capacidade(),
-                        'tipo': obj.get_tipo(),
-                        'descricao': obj.get_descricao(),
-                        'ativo': obj.get_ativo()
-                    }
-            elif isinstance(arr[0], User):
-                for i, obj in enumerate(arr):
-                    result_dict[i] = {
-                        'nome': obj.get_nome(),
-                        'email': obj.get_email(),
-                        'ativo': obj.get_ativo()
-                    }
-
-            return result_dict
 
         def __str__(self):
             string_values = ''.join([str(item) for item in self.__list_model])
@@ -199,32 +162,21 @@ class Column:
             super().set_value(value)
 
     class datetime_field(ColumnBase):
-        def __init__(self, value):
-            if type(value) is str:
-                if "T" in value:
-                    value = value.replace("T", " ")
-                if value.count(":") == 1:
-                    value += ":00"
+        format = "%d/%m/%Y %H:%M"
 
-                value = datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
-            elif type(value) is datetime:
-                value.strftime("%Y-%m-%d %H:%M:%S")
+        def __init__(self, value):
+            if type(value) is datetime:
+                value = value.strftime(self.format)
 
             super().__init__(value, 4)
 
         def set_value(self, value):
-            if type(value) is str:
-                if "T" in value:
-                    value = value.replace("T", " ")
-                if value.count(":") == 1:
-                    value += ":00"
-
-                value = datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
-            elif type(value) is datetime:
-                value.strftime("%Y-%m-%d %H:%M:%S")
+            if type(value) is datetime:
+                value = value.strftime(self.format)
 
             super().set_value(value)
 
         def get_value(self) -> str:
-            value = super().get_value().strftime("%Y-%m-%d %H:%M:%S")
+            value = super().get_value()
+            print(value)
             return value
