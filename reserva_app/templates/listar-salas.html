@@ -29,9 +29,13 @@
                   <td>{{ "SIM" if sala.get_ativo() else "NÃO" }} </td>
                   <td>
                     <form action="">
-                      <button class="btn btn-sm btn-dark" type="submit" formaction="/cadastrar-sala?tipo={{ sala.get_tipo() }}&capacidade={{ sala.get_capacidade() }}&descricao={{ sala.get_descricao() }}">Editar</button>
-                      <button class="btn btn-sm btn-dark" type="submit" formaction="{{url_for("desativar_sala", sala_id=sala.get_codigo())}}">Desativar</button>
-                      <button class="btn btn-sm btn-dark" type="submit" formaction="/listar-salas">Excluir</button>
+                      <button class="btn btn-sm btn-dark" type="submit" formaction="{{url_for("editar_sala", sala_id=sala.get_codigo())}}">Editar</button>
+                      {% if sala.get_ativo() %}
+                        <button class="btn btn-sm btn-dark" type="submit" formaction="{{url_for("desativar_sala", sala_id=sala.get_codigo())}}">Desativar</button>
+                      {% else %}
+                        <button class="btn btn-sm btn-dark" type="submit" formaction="{{url_for("ativar_sala", sala_id=sala.get_codigo())}}">Ativar</button>
+                      {% endif %}
+                      <button class="btn btn-sm btn-dark" type="submit" formaction="{{url_for("excluir_sala", sala_id=sala.get_codigo())}}">Excluir</button>
                     </form>
                   </td>
                 </tr>

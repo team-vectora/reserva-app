@@ -1,0 +1,29 @@
+{% extends 'base-content-form.html' %}
+  {% block title %} Editar Sala {% endblock %}
+
+  {% block content_header %}
+    <h1>Editar Sala</h1>
+    <p>Utilize o formulário abaixo para editar uma sala</p>
+ {% endblock %}
+
+  {% block content %}
+      <form action="/editar-sala" method ="POST">
+        <div class="mb-3">
+            <label for="tipo" class="form-label">Tipo</label>
+            <select class="form-select" id="tipo" name="tipo">
+                <option value="1" {{ 'selected' if sala.get_tipo == 1 else '' }}>Laboratório de Informática</option>
+                <option value="2" {{ 'selected' if sala.get_tipo == 2 else '' }}>Laboratório de Química</option>
+                <option value="3" {{ 'selected' if sala.get_tipo == 3 else '' }}>Sala de Aula</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="capacidade" class="form-label">Capacidade</label>
+            <input type="number" class="form-control" name="capacidade" id="capacidade" value="{{ sala.get_capacidade() }}">
+        </div>
+        <div class="mb-3">
+            <label for="descricao" class="form-label">Descrição</label>
+            <textarea class="form-control" name="descricao" id="descricao" cols="30" rows="10"> {{ sala.get_descricao() }} </textarea>
+        </div>
+        <button type="submit" class="btn btn-dark">Salvar</button>
+    </form>
+ {% endblock %}

@@ -98,13 +98,34 @@ def listar_salas():
 @app.route('/listar-salas/<sala_id>/editar')
 @login_required
 def editar_sala(sala_id):
-    return render_template("listar-salas.html")
+    sala = Sala.objects().where("get_codigo", int(sala_id))
+
+    if request.method == "POST":
+
+        tipo = int(request.form.get("tipo"))
+        capacidade = int(request.form.get("capacidade"))
+        descricao = request.form.get("descricao").strip()
+
+        if not all([tipo, capacidade, descricao]):
+            return render_template("editar-sala.html", mensagem="Preencha todos os campos")
+        if int(capacidade) <= 0:
+            return render_template("editar-sala.html", mensagem="Adicione uma capacidade válida")
+        sala.set_tipo(tipo)
+        sala.set_capacidade(capacidade)
+        sala.set_descricao(descricao)
+        sala.save()
+        return redirect(url_for("listar_salas"))
+    
+    return render_template("editar-sala.html", sala=sala)
 
 
 @app.route('/listar-salas/<sala_id>/excluir')
 @login_required
 def excluir_sala(sala_id):
-    return render_template("listar-salas.html")
+    sala = Sala.objects().where("get_codigo", int(sala_id))
+    sala.exclude(sala_id)
+    sala.save()
+    return redirect(url_for("listar_salas"))
 
 
 @app.route('/listar-salas/<sala_id>/desativar')
@@ -115,6 +136,14 @@ def desativar_sala(sala_id):
     sala.save()
     return redirect(url_for("listar_salas"))
 
+
+@app.route('/listar-salas/<sala_id>/ativar')
+@login_required
+def ativar_sala(sala_id):
+    sala = Sala.objects().where("get_codigo", int(sala_id))
+    sala.set_ativo(True)
+    sala.save()
+    return redirect(url_for("listar_salas"))
 
 @app.route('/reservar-sala', methods=["POST", "GET"])
 @login_required
