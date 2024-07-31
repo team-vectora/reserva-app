@@ -1,10 +1,10 @@
-from datetime import datetime
 import reserva_app
 from functools import wraps
-from flask import render_template, request, redirect, url_for, make_response
+from datetime import datetime
 from reserva_app.models import Sala, Reserva, User
+from flask import render_template, request, redirect, url_for, make_response
 
-app = reserva_app.init()
+app = reserva_app.app
 
 
 def login_required(f):
@@ -14,6 +14,20 @@ def login_required(f):
 
         if id_usuario is None:
             return redirect(url_for('login'))
+        return f(*args, **kwargs)
+
+    return funcao
+
+
+def admin_required(f):
+    @wraps(f)
+    def funcao(*args, **kwargs):
+        id_usuario = request.cookies.get("userid")
+        user = User.objects().where("get_codigo", int(id_usuario))
+
+        if id_usuario is None or not user or not user.get_admin():
+            return redirect(url_for('login'))
+
         return f(*args, **kwargs)
 
     return funcao
@@ -37,14 +51,14 @@ def cadastro():
         if not all([nome, email, senha]):
             return render_template("cadastro.html", mensagem="Preencha todos os campos")
 
-        usuario = User(nome, email, senha)
         objs = User.objects()
         if objs is not None:
             if objs.where("get_email", email):
                 return render_template("cadastro.html", mensagem="Endereço de email já cadastrado.")
 
+        usuario = User(nome, email, senha)
         usuario.save()
-        return redirect(url_for("login"))
+        return render_template("cadastro.html", mensagem="Usuário cadastrado com sucesso.", alert="success")
 
     return render_template("cadastro.html")
 
@@ -67,37 +81,40 @@ def login():
 
 
 @app.route('/cadastrar-sala', methods=["POST", "GET"])
-@login_required
+@admin_required
 def cadastrar_sala():
+    admin = User.objects().where("get_codigo", get_id_usuario())
     if request.method == "POST":
         tipo = int(request.form.get("tipo"))
         capacidade = int(request.form.get("capacidade"))
         descricao = request.form.get("descricao").strip()
 
         if not all([tipo, capacidade, descricao]):
-            return render_template("cadastrar-sala.html", mensagem="Preencha todos os campos")
+            return render_template("cadastrar-sala.html", mensagem="Preencha todos os campos", admin=admin)
         if tipo == 0:
-            return render_template("cadastrar-sala.html", mensagem="Selecione o tipo da sala")
+            return render_template("cadastrar-sala.html", mensagem="Selecione o tipo da sala", admin=admin)
         if int(capacidade) <= 0:
-            return render_template("cadastrar-sala.html", mensagem="Adicione uma capacidade válida")
+            return render_template("cadastrar-sala.html", mensagem="Adicione uma capacidade válida", admin=admin)
 
         sala = Sala(capacidade, tipo, descricao)
         sala.save()
         return redirect(url_for("cadastrar_sala"))
 
-    return render_template("cadastrar-sala.html")
+    return render_template("cadastrar-sala.html", admin=admin)
 
 
 @app.route('/listar-salas')
-@login_required
+@admin_required
 def listar_salas():
     sala = Sala.objects().get_list()
-    return render_template("listar-salas.html", salas=sala)
+    admin = User.objects().where("get_codigo", get_id_usuario())
+    return render_template("listar-salas.html", salas=sala, admin=admin)
 
 
-@app.route('/listar-salas/<sala_id>/editar')
-@login_required
+@app.route('/listar-salas/<sala_id>/editar', methods=["POST", "GET"])
+@admin_required
 def editar_sala(sala_id):
+    admin = User.objects().where("get_codigo", get_id_usuario())
     sala = Sala.objects().where("get_codigo", int(sala_id))
 
     if request.method == "POST":
@@ -107,20 +124,20 @@ def editar_sala(sala_id):
         descricao = request.form.get("descricao").strip()
 
         if not all([tipo, capacidade, descricao]):
-            return render_template("editar-sala.html", mensagem="Preencha todos os campos")
+            return render_template("editar-sala.html", mensagem="Preencha todos os campos", admin=admin)
         if int(capacidade) <= 0:
-            return render_template("editar-sala.html", mensagem="Adicione uma capacidade válida")
+            return render_template("editar-sala.html", mensagem="Adicione uma capacidade válida", admin=admin)
         sala.set_tipo(tipo)
         sala.set_capacidade(capacidade)
         sala.set_descricao(descricao)
         sala.save()
         return redirect(url_for("listar_salas"))
     
-    return render_template("editar-sala.html", sala=sala)
+    return render_template("editar-sala.html", sala=sala, admin=admin)
 
 
 @app.route('/listar-salas/<sala_id>/excluir')
-@login_required
+@admin_required
 def excluir_sala(sala_id):
     sala = Sala.objects().where("get_codigo", int(sala_id))
     sala.exclude(sala_id)
@@ -129,7 +146,7 @@ def excluir_sala(sala_id):
 
 
 @app.route('/listar-salas/<sala_id>/desativar')
-@login_required
+@admin_required
 def desativar_sala(sala_id):
     sala = Sala.objects().where("get_codigo", int(sala_id))
     sala.set_ativo(False)
@@ -138,16 +155,18 @@ def desativar_sala(sala_id):
 
 
 @app.route('/listar-salas/<sala_id>/ativar')
-@login_required
+@admin_required
 def ativar_sala(sala_id):
     sala = Sala.objects().where("get_codigo", int(sala_id))
     sala.set_ativo(True)
     sala.save()
     return redirect(url_for("listar_salas"))
 
+
 @app.route('/reservar-sala', methods=["POST", "GET"])
 @login_required
 def reservar_sala():
+    admin = User.objects().where("get_codigo", get_id_usuario())
     salas = Sala.objects().get_list()
 
     if request.method == "POST":
@@ -156,7 +175,12 @@ def reservar_sala():
         fim = request.form.get("fim")
 
         if not all([inicio, fim]):
-            return render_template("reservar-sala.html", salas=salas, mensagem="Preencha todos os campos")
+            return render_template(
+                "reservar-sala.html",
+                salas=salas,
+                mensagem="Preencha todos os campos",
+                admin=admin
+            )
 
         inicio = datetime.strptime(inicio, "%Y-%m-%dT%H:%M")
         fim = datetime.strptime(fim, "%Y-%m-%dT%H:%M")
@@ -168,7 +192,8 @@ def reservar_sala():
             return render_template(
                 "reservar-sala.html",
                 salas=salas,
-                mensagem="Essa sala já esta reservada nesse horário"
+                mensagem="Essa sala já esta reservada nesse horário",
+                admin=admin
             )
 
         reserva = Reserva(get_id_usuario(), codigo_sala, inicio, fim)
@@ -177,24 +202,26 @@ def reservar_sala():
             return render_template(
                 "reservar-sala.html",
                 salas=salas,
-                mensagem="A sala deve ser reservada com 6 horas de antecedência"
+                mensagem="A sala deve ser reservada com 6 horas de antecedência",
+                admin=admin
             )
         if reserva.duracao().total_seconds() <= 0 or reserva.tempo_restante().total_seconds() >= 0:
-            return render_template("reservar-sala.html", salas=salas, mensagem="Horário inválido")
+            return render_template("reservar-sala.html", salas=salas, mensagem="Horário inválido", admin=admin)
         if reserva.duracao().total_seconds() > 28800:
             return render_template("reservar-sala.html", salas=salas,
-                                   mensagem="O tempo de duração da sala não pode ser superior a oito horas")
+                                   mensagem="O tempo de duração da sala não pode ser superior a oito horas", admin=admin)
 
         reserva.save()
 
         return redirect(url_for("reservas"))
 
-    return render_template("reservar-sala.html", salas=salas)
+    return render_template("reservar-sala.html", salas=salas, admin=admin)
 
 
 @app.route('/reservas', methods=["POST", "GET"])
 @login_required
 def reservas():
+    admin = User.objects().where("get_codigo", get_id_usuario())
     reservas_objects = Reserva.objects().where("get_codigo_usuario", get_id_usuario())
 
     if request.method == "POST":
@@ -202,7 +229,7 @@ def reservas():
         end = datetime.strptime(request.form.get("end"), "%Y-%m-%dT%H:%M")
 
         if not all([start, end]):
-            return render_template("reservas.html", mensagem="Preencha todos os campos")
+            return render_template("reservas.html", mensagem="Preencha todos os campos", admin=admin)
 
         objects = Reserva.objects().where("get_codigo_usuario", get_id_usuario())
         reservas_objects = [reserva for reserva in objects
@@ -217,7 +244,8 @@ def reservas():
                 "reservas.html",
                 reservas=reservas_objects,
                 mensagem=mensagem,
-                alert=alert
+                alert=alert,
+                admin=admin
             )
         )
         response.delete_cookie("mensagem")
@@ -226,17 +254,18 @@ def reservas():
 
         return response
     
-    return render_template("reservas.html", reservas=reservas_objects)
+    return render_template("reservas.html", reservas=reservas_objects, admin=admin)
 
 
 @app.route('/detalhe_reserva/<reserva_id>', methods=["GET"])
 @login_required
 def detalhe_reserva(reserva_id):
+    admin = User.objects().where("get_codigo", get_id_usuario())
     reserva = Reserva.objects().where("get_codigo", int(reserva_id))
     usuario = User.objects().where("get_codigo", reserva.get_codigo_usuario())
     sala = Sala.objects().where("get_codigo", reserva.get_codigo_sala())
 
-    return render_template("detalhe-reserva.html", reserva=reserva, usuario=usuario, sala=sala)
+    return render_template("detalhe-reserva.html", reserva=reserva, usuario=usuario, sala=sala, admin=admin)
 
 
 @app.route('/cancelar-reserva/<reserva_id>', methods=['POST'])

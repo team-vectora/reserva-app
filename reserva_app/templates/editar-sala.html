@@ -7,13 +7,13 @@
  {% endblock %}
 
   {% block content %}
-      <form action="/editar-sala" method ="POST">
+      <form action="{{url_for("editar_sala", sala_id=sala.get_codigo())}}" method ="POST">
         <div class="mb-3">
             <label for="tipo" class="form-label">Tipo</label>
             <select class="form-select" id="tipo" name="tipo">
-                <option value="1" {{ 'selected' if sala.get_tipo == 1 else '' }}>Laboratório de Informática</option>
-                <option value="2" {{ 'selected' if sala.get_tipo == 2 else '' }}>Laboratório de Química</option>
-                <option value="3" {{ 'selected' if sala.get_tipo == 3 else '' }}>Sala de Aula</option>
+                <option value="1" {{ 'selected' if sala.get_tipo() == 1 else '' }}>Laboratório de Informática</option>
+                <option value="2" {{ 'selected' if sala.get_tipo() == 2 else '' }}>Laboratório de Química</option>
+                <option value="3" {{ 'selected' if sala.get_tipo() == 3 else '' }}>Sala de Aula</option>
             </select>
         </div>
         <div class="mb-3">

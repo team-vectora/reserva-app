@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
-
 from reserva_app.static.db.model import Model, Column
+import bcrypt
 
 '''
 
@@ -119,12 +119,14 @@ class Reserva(Model):
 class User(Model):
     table_name = 'user.csv'
 
-    def __init__(self, nome: str = '', email: str = '', senha: str = '', ativo: bool = True):
+    def __init__(self, nome: str = '', email: str = '', senha: str = '', admin: bool = False, ativo: bool = True):
         super().__init__(User)
         self.__nome = Column.char_field(nome)
         self.__email = Column.char_field(email)
-        self.__senha = Column.char_field(senha)
+        senha_hash = bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.__senha = Column.char_field(senha_hash)
         self.__ativo = Column.boolean_field(ativo)
+        self.__admin = Column.boolean_field(admin)
 
     def set_nome(self, nome: str):
         self.__nome.set_value(nome)
@@ -150,6 +152,12 @@ class User(Model):
     def get_ativo(self) -> bool:
         return self.__ativo.get_value()
 
+    def set_admin(self, admin: bool):
+        self.__admin.set_value(admin)
+
+    def get_admin(self) -> bool:
+        return self.__admin.get_value()
+
     @staticmethod
     def objects() -> Model.ListModel | Model:
         return User._objects(User)
@@ -160,8 +168,14 @@ class User(Model):
 
     @staticmethod
     def autenticate(email: str, senha: str) -> Model | bool:
-        user = User.objects().where(("get_email", "get_senha"), (email, senha)) or False
-        return user if not user else user[0]
+        user = User.objects().where("get_email", email)
+
+        if user:
+            user = user[0]
+            if bcrypt.checkpw(senha.encode("utf-8"), user.get_senha().encode('utf-8')):
+                return user
+
+        return False
 
 
 class Sala(Model):
@@ -174,7 +188,7 @@ class Sala(Model):
 
     table_name = 'sala.csv'
 
-    def __init__(self, capacidade: int = 0, tipo: int = 0, descricao: str = '', ativo:bool =True):
+    def __init__(self, capacidade: int = 0, tipo: int = 0, descricao: str = '', ativo: bool =True):
         super().__init__(Sala)
         self.__capacidade = Column.integer_field(capacidade)
         self.__ativo = Column.boolean_field(ativo)

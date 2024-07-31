@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 import reserva_app
 
-app = reserva_app.init()
+app = reserva_app.app
 
 
 class Model:
@@ -63,7 +63,11 @@ class Model:
             file.truncate()
 
     def __str__(self):
-        return ",".join(map(str, [attr for attr in self.__dir__(get=True)])) + "\n"
+        return ",".join(map(self.__format_to_csv, [attr for attr in self.__dir__(get=True)])) + "\n"
+
+    @staticmethod
+    def __format_to_csv(value):
+        return str(value).replace(",", Column.char_field.CHAR_REPLACE_COMMA)
 
     def __dir__(self, get=False, set=False):
         dir_attr = super().__dir__()
@@ -110,6 +114,13 @@ class Model:
         def __str__(self):
             string_values = ''.join([str(item) for item in self.__list_model])
             return f"{string_values}"
+
+        def __str__(self):
+            return ",".join(map(self.__format_to_csv, [attr for attr in self.__dir__(get=True)])) + "\n"
+
+        @staticmethod
+        def __format_to_csv(value):
+            return str(value).replace(",", Column.char_field.CHAR_REPLACE_COMMA)
 
 
 class ColumnBase:
