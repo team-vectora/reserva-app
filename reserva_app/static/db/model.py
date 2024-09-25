@@ -93,25 +93,103 @@ class Model:
         def append(self, value):
             self.__list_model.append(value)
 
-        def where(self, key=None, value=None) -> list:
-            if type(key) is not str:
-                list_model = [
-                    item
-                    for item in self.__list_model
-                    if all(getattr(item, key_item)() == value_item for key_item, value_item in zip(key, value))
-                ]
+        def where(self, key=None, value=None) -> list | super:
+            sorted_list = sorted(self.__list_model, key=lambda x: getattr(x, key)())
+
+            if key == "get_codigo" or key == "get_email":
+                return self._binary_search(sorted_list, key, value)
+
+            if isinstance(key, str):
+                print("CAIU AQUIIIII")
+                return self._binary_search_filter(sorted_list, key, value)
             else:
-                list_model = [item for item in self.__list_model if getattr(item, key)() == value]
-
-            if list_model and key == "get_codigo":
-                return list_model[0]
-
-            return list_model
+                return self._binary_search_multiple_filter(sorted_list, key, value)
 
         def get_list(self):
             return self.__list_model
 
-        def __str__(self):
+        @staticmethod
+        def _binary_search(sorted_list, key, value):
+            start = 0
+            end = len(sorted_list) - 1
+
+            while start <= end:
+                mid = (start + end) // 2
+                current_value = getattr(sorted_list[mid], key)()
+
+                if current_value == value:
+                    return sorted_list[mid]
+                elif current_value < value:
+                    start = mid + 1
+                else:
+                    end = mid - 1
+
+            return None
+
+        @staticmethod
+        def _binary_search_filter(sorted_list, key, value):
+            start = 0
+            end = len(sorted_list) - 1
+            found_index = -1
+
+            print(f"sorted list: {[str(i) for i in sorted_list]}")
+            print(f"value: {value}")
+
+            while start <= end:
+                mid = (start + end) // 2
+                current_value = getattr(sorted_list[mid], key)()
+
+                if current_value == value:
+                    found_index = mid
+                    break
+                elif current_value < value:
+                    start = mid + 1
+                else:
+                    end = mid - 1
+
+            if found_index == -1:
+                return []
+
+            results = [sorted_list[found_index]]
+            print(f"Results: {results}")
+
+            left = found_index - 1
+            while left >= 0 and getattr(sorted_list[left], key)() == value:
+                results.insert(0, sorted_list[left])
+                left -= 1
+
+
+            print(f"Results left: {results}")
+
+            right = found_index + 1
+            while right < len(sorted_list) and getattr(sorted_list[right], key)() == value:
+                results.append(sorted_list[right])
+                right += 1
+
+
+            print(f"Results Right: {results}")
+
+            return results
+
+        @staticmethod
+        def _binary_search_multiple_filter(sorted_list, key_list, value_list):
+
+            aux_list_results = []
+
+            for key, value in zip(key_list, value_list):
+                result_filter_list = Model.ListModel._binary_search_filter(sorted_list, key, value)
+                aux_list_results.append(result_filter_list)
+
+            if len(aux_list_results) > 1:
+                final_results = aux_list_results[0]
+                for result_filter_list in aux_list_results:
+                    final_results = [item for item in final_results if item in result_filter_list]
+
+                return final_results
+            else:
+                return aux_list_results[0]
+
+        def print_(self):
             string_values = ''.join([str(item) for item in self.__list_model])
             return f"{string_values}"
 

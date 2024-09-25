@@ -171,7 +171,6 @@ class User(Model):
         user = User.objects().where("get_email", email)
 
         if user:
-            user = user[0]
             if bcrypt.checkpw(senha.encode("utf-8"), user.get_senha().encode('utf-8')):
                 return user
 
@@ -222,6 +221,7 @@ class Sala(Model):
 
     def nome_sala(self) -> str:
         objs = Sala.objects().where("get_tipo", self.get_tipo())
+        print([str(i) for i in objs])
         id_sala = objs.index([sala for sala in objs if sala.get_codigo() == self.get_codigo()][0]) + 1
         return self.__tipos_sala[self.get_tipo() - 1] + ' ' + str(id_sala)
     
