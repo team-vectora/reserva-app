@@ -7,15 +7,19 @@ app = reserva_app.app
 
 class Model:
     def __init__(self, child_class) -> None:
-        target = os.path.join(app.static_folder, 'db', child_class.table_name)
+        target = os.path.join(app.static_folder, 'db', child_class.table_name)  # Nome do arquivo CSV
 
-        self.__codigo = 0
-        self.__table_name = target
-        self.__child_class = child_class
+        self.__codigo = 0  # Codigo é comum para todos os models
+        self.__table_name = target  # Nome do arquivo
+        self.__child_class = child_class  # Instancia da classe filha que vai herdar o Model
 
     def _generate_id(self) -> int:
-        objects = self._objects(self.__child_class).get_list()
-        return 1 if not objects else objects[-1].get_codigo() + 1
+        objects = self._objects(self.__child_class).get_list()  # Lista dos objetos
+        return 1 if not objects else objects[-1].get_codigo() + 1  # Cria o id sendo o id do ultimo da lista +1
+
+    """
+        GETTER SETTER
+    """
 
     def get_codigo(self):
         return self.__codigo
@@ -24,17 +28,19 @@ class Model:
         self.__codigo = int(codigo)
 
     def save(self) -> int:
-        mode = "a" if self.__codigo == 0 else "r+"
+        mode = "a" if self.__codigo == 0 else "r+"  # Se o codigo for zero quer dizer que é um Model novo, então o
+                                                    # modo é de A, pra criar o adicionar, se não (se ja ta criado) então
+                                                    # é R+ (read e edit) pra dar o update
         with open(self.__table_name, mode, encoding='latin-1') as file:
-            if self.__codigo == 0:
-                self.__codigo = self._generate_id()
-                print("dando o str com " + str(self))
-                file.write(str(self))
-            else:
+            if self.__codigo == 0:  # Se o model é novo
+                self.__codigo = self._generate_id()  # Gera um novo ID
+                file.write(str(self))  # Adiciona no arquivo
+            else:  # Se o model ja existe
                 readline = file.readlines()
-                new_lines = [str(self) if line.strip().endswith(str(self.__codigo)) else line for line in readline]
+                new_lines = [str(self) if line.strip().endswith(str(self.__codigo)) else line for line in readline]  #
+                                                    # Troca toda a linha pela linha atual
                 file.seek(0)
-                file.writelines(new_lines)
+                file.writelines(new_lines)  # Reescreve todo_ o arquivo
                 file.truncate()
 
         return self.__codigo
@@ -100,7 +106,6 @@ class Model:
                 return self._binary_search(sorted_list, key, value)
 
             if isinstance(key, str):
-                print("CAIU AQUIIIII")
                 return self._binary_search_filter(sorted_list, key, value)
             else:
                 return self._binary_search_multiple_filter(sorted_list, key, value)
@@ -132,9 +137,6 @@ class Model:
             end = len(sorted_list) - 1
             found_index = -1
 
-            print(f"sorted list: {[str(i) for i in sorted_list]}")
-            print(f"value: {value}")
-
             while start <= end:
                 mid = (start + end) // 2
                 current_value = getattr(sorted_list[mid], key)()
@@ -151,23 +153,16 @@ class Model:
                 return []
 
             results = [sorted_list[found_index]]
-            print(f"Results: {results}")
 
             left = found_index - 1
             while left >= 0 and getattr(sorted_list[left], key)() == value:
                 results.insert(0, sorted_list[left])
                 left -= 1
 
-
-            print(f"Results left: {results}")
-
             right = found_index + 1
             while right < len(sorted_list) and getattr(sorted_list[right], key)() == value:
                 results.append(sorted_list[right])
                 right += 1
-
-
-            print(f"Results Right: {results}")
 
             return results
 
