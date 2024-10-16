@@ -23,10 +23,10 @@ class Model:
     def _get_connection():
         try:
             connection = pymysql.connect(
-                host='localhost',
-                database='reservaappdb',
-                user='root',
-                password="1234",
+                host='b4vpxaupsbyv2iztkbwl-mysql.services.clever-cloud.com',
+                database='b4vpxaupsbyv2iztkbwl',
+                user='uuwhvoyvay5g0gdr',
+                password=os.environ["db_password"],
                 port=3306,
                 #cursorclass=DictCursor,
             )
