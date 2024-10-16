@@ -1,4 +1,7 @@
 import os
+import pymysql
+from pymysql.cursors import DictCursor
+from mysql.connector import Error
 from datetime import datetime
 import reserva_app
 
@@ -7,91 +10,185 @@ app = reserva_app.app
 
 class Model:
     def __init__(self, child_class) -> None:
-        target = os.path.join(app.static_folder, 'db', child_class.table_name)  # Nome do arquivo CSV
-
-        self.__codigo = 0  # Codigo é comum para todos os models
-        self.__table_name = target  # Nome do arquivo
-        self.__child_class = child_class  # Instancia da classe filha que vai herdar o Model
-
-    def _generate_id(self) -> int:
-        objects = self._objects(self.__child_class).get_list()  # Lista dos objetos
-        return 1 if not objects else objects[-1].get_codigo() + 1  # Cria o id sendo o id do ultimo da lista +1
-
-    """
-        GETTER SETTER
-    """
+        self.__codigo = 0  # Código é comum para todos os models
+        self.__child_class = child_class  # Instância da classe filha que vai herdar o Model
 
     def get_codigo(self):
         return self.__codigo
 
     def set_codigo(self, codigo):
-        self.__codigo = int(codigo)
+        self.__codigo = codigo
+
+    @staticmethod
+    def _get_connection():
+        try:
+            connection = pymysql.connect(
+                host='localhost',
+                database='reservaappdb',
+                user='root',
+                password="1234",
+                port=3306,
+                #cursorclass=DictCursor,
+            )
+            return connection
+        except Error as e:
+            print(f"Error: {e}")
+            return None
 
     def save(self) -> int:
-        mode = "a" if self.__codigo == 0 else "r+"  # Se o codigo for zero quer dizer que é um Model novo, então o
-                                                    # modo é de A, pra criar o adicionar, se não (se ja ta criado) então
-                                                    # é R+ (read e edit) pra dar o update
-        with open(self.__table_name, mode, encoding='latin-1') as file:
-            if self.__codigo == 0:  # Se o model é novo
-                self.__codigo = self._generate_id()  # Gera um novo ID
-                file.write(str(self))  # Adiciona no arquivo
-            else:  # Se o model ja existe
-                readline = file.readlines()
-                new_lines = [str(self) if line.strip().endswith(str(self.__codigo)) else line for line in readline]  #
-                                                    # Troca toda a linha pela linha atual
-                file.seek(0)
-                file.writelines(new_lines)  # Reescreve todo_ o arquivo
-                file.truncate()
+        connection = self._get_connection()
+        if not connection:
+            return 0
 
+        cursor = connection.cursor()
+
+        if self.__codigo == 0:  # Novo registro
+            columns = ', '.join([attr for attr in self.__dir__(db=True)])
+            values = ', '.join(['%s'] * len(self.__dir__(db=True)))
+            query = f"INSERT INTO {self.__child_class.table_name} ({columns}) VALUES ({values})"
+            print(f"query: {cursor.mogrify(query, [attr for attr in self.__dir__(get=True)])}")
+            cursor.execute(query, [attr for attr in self.__dir__(get=True)])
+            self.__codigo = cursor.lastrowid
+        else:  # Atualizar registro existente
+            set_clause = ', '.join([f"{attr} = %s" for attr in self.__dir__(db=True)[:-1]])
+            query = f"UPDATE {self.__child_class.table_name} SET {set_clause} WHERE codigo = %s"
+            print(f"query: {cursor.mogrify(query, [attr for attr in self.__dir__(get=True)])}")
+            cursor.execute(query, [attr for attr in self.__dir__(get=True)])
+
+        connection.commit()
+        cursor.close()
+        connection.close()
         return self.__codigo
 
     @staticmethod
     def _objects(child_class):
-        target = os.path.join(app.static_folder, 'db', child_class.table_name)
-        with open(target, "r", encoding='latin-1') as file:
-            list_model = Model.ListModel()
-            for line in file.readlines():
-                attr_list = line.strip().split(",")
-                model = child_class()
-                for (dir_attr, attr) in zip(model.__dir__(set=True), attr_list):
-                    model.__getattribute__(dir_attr)(attr)
-                list_model.append(model)
-            return list_model
+        connection = Model._get_connection()
+        cursor = connection.cursor()
+        query = f"SELECT * FROM {child_class.table_name}"
+        cursor.execute(query)
+
+        print(f"query: {cursor.mogrify(query)}")
+
+        list_model = Model.ListModel()
+        list_model.set_child_class(child_class)
+        for row in cursor.fetchall():
+            model = child_class()
+            model.set_codigo(row[0])  # o primeiro sempre vai ser o codigo
+            for (attr, value) in zip(model.__dir__(set=True), row[1:]):  # precisa pular se nao ele quebra
+                model.__getattribute__(attr)(value)
+            list_model.append(model)
+
+        cursor.close()
+        connection.close()
+        return list_model
 
     @staticmethod
     def _exclude(id_to_exclude, child_class):
-        target = os.path.join(app.static_folder, 'db', child_class.table_name)
-        with open(target, "r+", encoding='latin-1') as file:
-            readline = file.readlines()
-            new_lines = [line for line in readline if not line.strip().endswith(str(id_to_exclude))]
-            file.seek(0)
-            file.writelines(new_lines)
-            file.truncate()
+        connection = Model._get_connection()
+        cursor = connection.cursor()
+        query = f"DELETE FROM {child_class.table_name} WHERE codigo = %s"
+        cursor.execute(query, id_to_exclude)
+
+        print(f"query: {cursor.mogrify(query, id_to_exclude)}")
+        connection.commit()
+
+        cursor.close()
+        connection.close()
 
     def __str__(self):
-        return ",".join(map(self.__format_to_csv, [attr for attr in self.__dir__(get=True)])) + "\n"
+        return ",".join([str(attr) for attr in self.__dir__(get=True)]) + "\n"
 
-    @staticmethod
-    def __format_to_csv(value):
-        return str(value).replace(",", Column.char_field.CHAR_REPLACE_COMMA)
-
-    def __dir__(self, get=False, set=False):
+    def __dir__(self, get=False, set=False, db=False):
         dir_attr = super().__dir__()
 
         if get:
-            for attr in dir_attr:
-                if attr.startswith("get"):
-                    print(attr)
-                    print(self.__getattribute__(attr)())
-
             return [self.__getattribute__(attr)() for attr in dir_attr
                     if attr.startswith("get")]
         if set:
             return [attr for attr in dir_attr
                     if attr.startswith("set")]
+        if db:
+            return [attr[4:] for attr in dir_attr
+                    if attr.startswith("get")]
 
         return dir_attr
 
+    class ListModel:
+        def __init__(self, list_model=None, child_class=None):
+            self.__list_model = list() if list_model is None else list_model
+            self.__child_class = child_class
+
+        def append(self, value):
+            self.__list_model.append(value)
+
+        def where(self, key=None, value=None) -> list | super:
+
+            cursor = Model._get_connection().cursor()
+
+            if isinstance(key, tuple) and isinstance(value, tuple):
+                # Se ambos são tuplas, construa uma consulta com múltiplas condições
+                conditions = ' AND '.join([f"{k} = %s" for k in key])
+                query = f"SELECT * FROM {self.__child_class.table_name} WHERE {conditions}"
+                cursor.execute(query, value)
+            elif key and value:
+                # Se ambos são parâmetros normais
+                query = f"SELECT * FROM {self.__child_class.table_name} WHERE {key} = %s"
+                cursor.execute(query, value)
+            else:
+                # Se não forem fornecidos parâmetros, retorna todos os registros
+                query = f"SELECT * FROM {self.__child_class.table_name}"
+                cursor.execute(query)
+
+            print(f"query: {cursor.mogrify(query, value)}")
+
+            results = cursor.fetchall()
+            print(f"resultados: {results}")
+            if len(results) == 0:
+                return []
+
+            cursor.close()
+            # Criar objetos da classe filha a partir dos resultados
+            models = []
+            for row in results:
+                model = self.__child_class()
+                model.set_codigo(row[0])  # o primeiro sempre vai ser o codigo e da ruim se nao excluir ele antes
+                for attr, value in zip(model.__dir__(set=True), row[1:]):
+                    model.__getattribute__(attr)(value)
+                models.append(model)
+
+            return models if len(models) > 1 else models[0]
+
+        def get_list(self):
+            return self.__list_model
+
+        def print_(self):
+            cursor = Model._get_connection().cursor()
+
+            # Executar uma consulta para obter o cabeçalho
+            cursor.execute(f"SELECT * FROM {self.__child_class.table_name} LIMIT 0")  # Consulta apenas para cabeçalho
+            columns = [col[0] for col in cursor.description]  # Obter cabeçalho
+
+            # Imprimir cabeçalho
+            header = '| ' + ' | '.join(columns) + ' |'
+            print(header)
+            print('-' * len(header))  # Linhas divisórias
+
+            # Consultar todos os dados para imprimir
+            cursor.execute(f"SELECT * FROM {self.__child_class.table_name}")
+            results = cursor.fetchall()
+            cursor.close()
+
+            # Imprimir cada linha formatada
+            for row in results:
+                formatted_row = '| ' + ' | '.join(str(value) for value in row) + ' |'
+                print(formatted_row)
+
+        def set_child_class(self, child_class):
+            self.__child_class = child_class
+
+    """
+    LIST MODEL antigo com a implementação da BUSCA BINÁRIA
+    
     class ListModel:
         def __init__(self, list_model=None):
             self.__list_model = list() if list_model is None else list_model
@@ -194,6 +291,7 @@ class Model:
         @staticmethod
         def __format_to_csv(value):
             return str(value).replace(",", Column.char_field.CHAR_REPLACE_COMMA)
+    """
 
 
 class ColumnBase:
@@ -210,212 +308,12 @@ class ColumnBase:
 
 class Column:
     class char_field(ColumnBase):
-        CHAR_REPLACE_COMMA = "///COMMA///"
 
         def __init__(self, value):
-            super().__init__(self.__replace_char_comma(str(value)), 1)
+            super().__init__(str(value), 1)
 
         def set_value(self, value):
-            super().set_value(self.__replace_char_comma(str(value)))
-
-        @staticmethod
-        def __replace_char_comma(value):
-            return value.replace(Column.char_field.CHAR_REPLACE_COMMA, ",")
-
-    class integer_field(ColumnBase):
-        def __init__(self, value):
-            super().__init__(int(value), 2)
-
-        def set_value(self, value):
-            super().set_value(int(value))
-
-    class float_field(ColumnBase):
-        def __init__(self, value):
-            super().__init__(float(value), 3)
-
-        def set_value(self, value):
-            super().set_value(float(value))
-
-    class boolean_field(ColumnBase):
-        def __init__(self, value):
-            value = value == 'True' if type(value) is str else value
-            super().__init__(value, 4)
-
-        def set_value(self, value: bool):
-            value = value == 'True' if type(value) is str else value
-            super().set_value(value)
-
-    class datetime_field(ColumnBase):
-        format = "%d/%m/%Y %H:%M"
-
-        def __init__(self, value):
-            if type(value) is datetime:
-                value = value.strftime(self.format)
-
-            super().__init__(value, 4)
-
-        def set_value(self, value):
-            if type(value) is datetime:
-                value = value.strftime(self.format)
-
-            super().set_value(value)
-
-        def get_value(self) -> str:
-            value = super().get_value()
-            print(value)
-            return value
-
-import mysql.connector
-from mysql.connector import Error
-from datetime import datetime
-import reserva_app
-
-app = reserva_app.app
-
-
-class Model:
-    def __init__(self, child_class) -> None:
-        self.__codigo = 0  # Código é comum para todos os models
-        self.__child_class = child_class  # Instância da classe filha que vai herdar o Model
-
-    @staticmethod
-    def _get_connection():
-        try:
-            connection = mysql.connector.connect(
-                host='localhost',
-                database='your_database',
-                user='your_user',
-                password='your_password'
-            )
-            return connection
-        except Error as e:
-            print(f"Error: {e}")
-            return None
-
-    def save(self) -> int:
-        connection = self._get_connection()
-        if not connection:
-            return 0
-
-        cursor = connection.cursor()
-
-        if self.__codigo == 0:  # Novo registro
-            self.__codigo = self._generate_id()
-            columns = ', '.join([attr for attr in self.__dir__(get=True)])
-            values = ', '.join(['%s'] * len(self.__dir__(get=True)))
-            query = f"INSERT INTO {self.__child_class.table_name} ({columns}) VALUES ({values})"
-            cursor.execute(query, [self.__getattribute__(attr)() for attr in self.__dir__(get=True)])
-        else:  # Atualizar registro existente
-            set_clause = ', '.join([f"{attr} = %s" for attr in self.__dir__(get=True)])
-            query = f"UPDATE {self.__child_class.table_name} SET {set_clause} WHERE codigo = %s"
-            cursor.execute(query, [self.__getattribute__(attr)() for attr in self.__dir__(get=True)] + [self.__codigo])
-
-        connection.commit()
-        cursor.close()
-        connection.close()
-        return self.__codigo
-
-    @staticmethod
-    def _objects(child_class):
-        connection = mysql.connector.connect(
-            host='localhost',
-            database='your_database',
-            user='your_user',
-            password='your_password'
-        )
-        cursor = connection.cursor()
-        query = f"SELECT * FROM {child_class.table_name}"
-        cursor.execute(query)
-
-        list_model = Model.ListModel()
-        for row in cursor.fetchall():
-            model = child_class()
-            for (attr, value) in zip(model.__dir__(set=True), row):
-                model.__getattribute__(attr)(value)
-            list_model.append(model)
-
-        cursor.close()
-        connection.close()
-        return list_model
-
-    @staticmethod
-    def _exclude(id_to_exclude, child_class):
-        connection = mysql.connector.connect(
-            host='localhost',
-            database='your_database',
-            user='your_user',
-            password='your_password'
-        )
-        cursor = connection.cursor()
-        query = f"DELETE FROM {child_class.table_name} WHERE codigo = %s"
-        cursor.execute(query, (id_to_exclude,))
-        connection.commit()
-
-        cursor.close()
-        connection.close()
-
-    def __str__(self):
-        return ",".join(map(self.__format_to_csv, [attr for attr in self.__dir__(get=True)])) + "\n"
-
-    @staticmethod
-    def __format_to_csv(value):
-        return str(value).replace(",", Column.char_field.CHAR_REPLACE_COMMA)
-
-    def __dir__(self, get=False, set=False):
-        dir_attr = super().__dir__()
-
-        if get:
-            return [self.__getattribute__(attr)() for attr in dir_attr
-                    if attr.startswith("get")]
-        if set:
-            return [attr for attr in dir_attr
-                    if attr.startswith("set")]
-
-        return dir_attr
-
-    class ListModel:
-        def __init__(self, list_model=None):
-            self.__list_model = list() if list_model is None else list_model
-
-        def append(self, value):
-            self.__list_model.append(value)
-
-        def where(self, key=None, value=None) -> list | super:
-            return [obj for obj in self.__list_model if getattr(obj, key)() == value]
-
-        def get_list(self):
-            return self.__list_model
-
-        def print_(self):
-            string_values = ''.join([str(item) for item in self.__list_model])
-            return f"{string_values}"
-
-
-class ColumnBase:
-    def __init__(self, value, type_field):
-        self.__value = value
-        self.__type_field = type_field
-
-    def get_value(self):
-        return self.__value
-
-    def set_value(self, value):
-        self.__value = value
-
-
-class Column:
-    class char_field(ColumnBase):
-        CHAR_REPLACE_COMMA = "///COMMA///"
-
-        def __init__(self, value):
-            super().__init__(self.__replace_char_comma(str(value)), 1)
-
-        def set_value(self, value):
-            super().set_value(self.__replace_char_comma(str(value)))
-
-        @staticmethod
-        def __replace_char_comma(value):
-            return value.replace(Column.char_field.CHAR_REPLACE_COMMA, ",")
+            super().set_value(str(value))
 
     class integer_field(ColumnBase):
         def __init__(self, value):
@@ -441,7 +339,7 @@ class Column:
             super().set_value(value)
 
     class datetime_field(ColumnBase):
-        format = "%d/%m/%Y %H:%M"
+        format = '%Y-%m-%d %H:%M:%S'
 
         def __init__(self, value):
             if isinstance(value, datetime):

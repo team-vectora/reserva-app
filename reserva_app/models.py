@@ -33,15 +33,15 @@ joao,joao@email,joao123,True,2
 [User.<xx5asd444gfeasd683613268>, User.<xx5asd444gfeasd683613268>]
 
 E por ser um ListModel você pode usar o método .where para filtrar os resultados
-para isso, coloque o método que voce quer utilizar para encontrar o resultado, e o resultado desejado
+para isso, coloque o atributo que voce quer utilizar para encontrar o resultado, e o resultado desejado
 Exemplo:
 
->>> objetos.where("get_codigo", 1) # retorna um objeto User que tenha o id 1
+>>> objetos.where("codigo", 1) # retorna um objeto User que tenha o id 1
 
 Use uma tupla para mais de uma pesquisa
 
 >>> reservas = Reservas.objects()
->>> reservas.where(("get_codigo_usuario", "get_ativo"), (1, True)) # Retorna todas as reservas do usuario 1, 
+>>> reservas.where(("codigo_usuario", "ativo"), (1, True)) # Retorna todas as reservas do usuario 1, 
                                                                      ainda ativas
                                                                      
 Por fim, para EXCLUIR basta usar o metodo .exclude, que também é estático
@@ -52,7 +52,7 @@ Por fim, para EXCLUIR basta usar o metodo .exclude, que também é estático
 
 
 class Reserva(Model):
-    table_name = 'reserva.csv'
+    table_name = 'Reserva'
 
     def __init__(self, codigo_usuario: int = 0, codigo_sala: int = 0, datetime_start: datetime = None,
                  datetime_end: datetime = None, ativo: bool = True):
@@ -105,7 +105,7 @@ class Reserva(Model):
         return self.get_datetime_end(False) - self.get_datetime_start(False)
 
     def nome_sala(self) -> str:
-        return Sala.objects().where("get_codigo", self.get_codigo_sala()).nome_sala()
+        return Sala.objects().where("codigo", self.get_codigo_sala()).nome_sala()
 
     @staticmethod
     def objects() -> Model.ListModel | Model:
@@ -117,7 +117,7 @@ class Reserva(Model):
 
 
 class User(Model):
-    table_name = 'user.csv'
+    table_name = 'User'
 
     def __init__(self, nome: str = '', email: str = '', senha: str = '', admin: bool = False, ativo: bool = True):
         super().__init__(User)
@@ -168,7 +168,7 @@ class User(Model):
 
     @staticmethod
     def autenticate(email: str, senha: str) -> Model | bool:
-        user = User.objects().where("get_email", email)
+        user = User.objects().where("email", email)
 
         if user:
             if bcrypt.checkpw(senha.encode("utf-8"), user.get_senha().encode('utf-8')):
@@ -185,9 +185,9 @@ class Sala(Model):
             3 = SALA DE AULA
     """
 
-    table_name = 'sala.csv'
+    table_name = 'Sala'
 
-    def __init__(self, capacidade: int = 0, tipo: int = 0, descricao: str = '', ativo: bool =True):
+    def __init__(self, capacidade: int = 0, tipo: int = 0, descricao: str = '', ativo: bool = True):
         super().__init__(Sala)
         self.__capacidade = Column.integer_field(capacidade)
         self.__ativo = Column.boolean_field(ativo)
@@ -220,14 +220,21 @@ class Sala(Model):
         return self.__ativo.get_value()
 
     def nome_sala(self) -> str:
-        objs = Sala.objects().where("get_tipo", self.get_tipo())
-        print([str(i) for i in objs])
+        objs = Sala.objects().where("tipo", self.get_tipo())
+
+        if not isinstance(objs, list):
+            """
+                Entao... quando tem só um obj ele retorna o obj nao a lista, ai nao funciona o resto do codigo
+                isso acontece pq qndo tem um retorno unico, tipo de email ou de codigo, ele retorna o obj pq só tem uma 
+                instancia dele, ai precisa desse if pra fugir desses casos
+            """
+            return self.__tipos_sala[self.get_tipo() - 1] + ' 1'
+
         id_sala = objs.index([sala for sala in objs if sala.get_codigo() == self.get_codigo()][0]) + 1
         return self.__tipos_sala[self.get_tipo() - 1] + ' ' + str(id_sala)
-    
+
     def tipo_sala(self) -> str:
         return self.__tipos_sala[self.get_tipo() - 1]
-
 
     @staticmethod
     def objects() -> Model.ListModel | Model:
@@ -236,4 +243,3 @@ class Sala(Model):
     @staticmethod
     def exclude(id_to_exclude: int):
         Model._exclude(id_to_exclude, Sala)
-

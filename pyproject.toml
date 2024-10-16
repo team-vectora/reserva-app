@@ -12,6 +12,8 @@ flask-bcrypt = "^1.0.1"
 bcrypt = "^4.2.0"
 mysql-connector = "^2.2.9"
 gunicorn = "^23.0.0"
+poetry-plugin-export = "^1.8.0"
+pymysql = "^1.1.1"
 
 [tool.poetry.scripts]
 start = "gunicorn app:app"

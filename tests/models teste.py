@@ -41,10 +41,10 @@ reserva1.save()
 print("Reserva atualizada:\n" + str(Reserva.objects()))
 
 
-reservas_de_joao = Reserva.objects().where("get_codigo_usuario", 1)
+reservas_de_joao = Reserva.objects().where("codigo_usuario", 1)
 print("Reservas de Joao:\n" + str(Model.ListModel(reservas_de_joao)))
 
-reservas_de_maria = Reserva.objects().where("get_codigo_usuario", 2)
+reservas_de_maria = Reserva.objects().where("codigo_usuario", 2)
 print("Reservas de Maria:\n" + str(Model.ListModel(reservas_de_maria)))
 
 reservas_de_joao_na_sala_um = Reserva.objects().where(("get_codigo_usuario", "get_codigo_sala"), (1, 1))
