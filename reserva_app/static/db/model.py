@@ -264,3 +264,195 @@ class Column:
             value = super().get_value()
             print(value)
             return value
+
+import mysql.connector
+from mysql.connector import Error
+from datetime import datetime
+import reserva_app
+
+app = reserva_app.app
+
+
+class Model:
+    def __init__(self, child_class) -> None:
+        self.__codigo = 0  # Código é comum para todos os models
+        self.__child_class = child_class  # Instância da classe filha que vai herdar o Model
+
+    @staticmethod
+    def _get_connection():
+        try:
+            connection = mysql.connector.connect(
+                host='localhost',
+                database='your_database',
+                user='your_user',
+                password='your_password'
+            )
+            return connection
+        except Error as e:
+            print(f"Error: {e}")
+            return None
+
+    def save(self) -> int:
+        connection = self._get_connection()
+        if not connection:
+            return 0
+
+        cursor = connection.cursor()
+
+        if self.__codigo == 0:  # Novo registro
+            self.__codigo = self._generate_id()
+            columns = ', '.join([attr for attr in self.__dir__(get=True)])
+            values = ', '.join(['%s'] * len(self.__dir__(get=True)))
+            query = f"INSERT INTO {self.__child_class.table_name} ({columns}) VALUES ({values})"
+            cursor.execute(query, [self.__getattribute__(attr)() for attr in self.__dir__(get=True)])
+        else:  # Atualizar registro existente
+            set_clause = ', '.join([f"{attr} = %s" for attr in self.__dir__(get=True)])
+            query = f"UPDATE {self.__child_class.table_name} SET {set_clause} WHERE codigo = %s"
+            cursor.execute(query, [self.__getattribute__(attr)() for attr in self.__dir__(get=True)] + [self.__codigo])
+
+        connection.commit()
+        cursor.close()
+        connection.close()
+        return self.__codigo
+
+    @staticmethod
+    def _objects(child_class):
+        connection = mysql.connector.connect(
+            host='localhost',
+            database='your_database',
+            user='your_user',
+            password='your_password'
+        )
+        cursor = connection.cursor()
+        query = f"SELECT * FROM {child_class.table_name}"
+        cursor.execute(query)
+
+        list_model = Model.ListModel()
+        for row in cursor.fetchall():
+            model = child_class()
+            for (attr, value) in zip(model.__dir__(set=True), row):
+                model.__getattribute__(attr)(value)
+            list_model.append(model)
+
+        cursor.close()
+        connection.close()
+        return list_model
+
+    @staticmethod
+    def _exclude(id_to_exclude, child_class):
+        connection = mysql.connector.connect(
+            host='localhost',
+            database='your_database',
+            user='your_user',
+            password='your_password'
+        )
+        cursor = connection.cursor()
+        query = f"DELETE FROM {child_class.table_name} WHERE codigo = %s"
+        cursor.execute(query, (id_to_exclude,))
+        connection.commit()
+
+        cursor.close()
+        connection.close()
+
+    def __str__(self):
+        return ",".join(map(self.__format_to_csv, [attr for attr in self.__dir__(get=True)])) + "\n"
+
+    @staticmethod
+    def __format_to_csv(value):
+        return str(value).replace(",", Column.char_field.CHAR_REPLACE_COMMA)
+
+    def __dir__(self, get=False, set=False):
+        dir_attr = super().__dir__()
+
+        if get:
+            return [self.__getattribute__(attr)() for attr in dir_attr
+                    if attr.startswith("get")]
+        if set:
+            return [attr for attr in dir_attr
+                    if attr.startswith("set")]
+
+        return dir_attr
+
+    class ListModel:
+        def __init__(self, list_model=None):
+            self.__list_model = list() if list_model is None else list_model
+
+        def append(self, value):
+            self.__list_model.append(value)
+
+        def where(self, key=None, value=None) -> list | super:
+            return [obj for obj in self.__list_model if getattr(obj, key)() == value]
+
+        def get_list(self):
+            return self.__list_model
+
+        def print_(self):
+            string_values = ''.join([str(item) for item in self.__list_model])
+            return f"{string_values}"
+
+
+class ColumnBase:
+    def __init__(self, value, type_field):
+        self.__value = value
+        self.__type_field = type_field
+
+    def get_value(self):
+        return self.__value
+
+    def set_value(self, value):
+        self.__value = value
+
+
+class Column:
+    class char_field(ColumnBase):
+        CHAR_REPLACE_COMMA = "///COMMA///"
+
+        def __init__(self, value):
+            super().__init__(self.__replace_char_comma(str(value)), 1)
+
+        def set_value(self, value):
+            super().set_value(self.__replace_char_comma(str(value)))
+
+        @staticmethod
+        def __replace_char_comma(value):
+            return value.replace(Column.char_field.CHAR_REPLACE_COMMA, ",")
+
+    class integer_field(ColumnBase):
+        def __init__(self, value):
+            super().__init__(int(value), 2)
+
+        def set_value(self, value):
+            super().set_value(int(value))
+
+    class float_field(ColumnBase):
+        def __init__(self, value):
+            super().__init__(float(value), 3)
+
+        def set_value(self, value):
+            super().set_value(float(value))
+
+    class boolean_field(ColumnBase):
+        def __init__(self, value):
+            value = value == 'True' if isinstance(value, str) else value
+            super().__init__(value, 4)
+
+        def set_value(self, value: bool):
+            value = value == 'True' if isinstance(value, str) else value
+            super().set_value(value)
+
+    class datetime_field(ColumnBase):
+        format = "%d/%m/%Y %H:%M"
+
+        def __init__(self, value):
+            if isinstance(value, datetime):
+                value = value.strftime(self.format)
+            super().__init__(value, 5)
+
+        def set_value(self, value):
+            if isinstance(value, datetime):
+                value = value.strftime(self.format)
+            super().set_value(value)
+
+        def get_value(self) -> str:
+            value = super().get_value()
+            return value

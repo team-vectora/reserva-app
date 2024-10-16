@@ -10,8 +10,12 @@ python = "^3.10"
 flask = "^3.0.3"
 flask-bcrypt = "^1.0.1"
 bcrypt = "^4.2.0"
+mysql-connector = "^2.2.9"
+gunicorn = "^23.0.0"
 
-
+[tool.poetry.scripts]
+start = "gunicorn app:app"
 [build-system]
+
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
