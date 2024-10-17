@@ -712,10 +712,3 @@ xattr==1.1.0 ; python_version >= "3.10" and python_version < "4.0" and sys_platf
 zipp==3.20.2 ; python_version >= "3.10" and python_version < "3.12" \
     --hash=sha256:a817ac80d6cf4b23bf7f2828b7cabf326f15a001bea8b1f9b49631780ba28350 \
     --hash=sha256:bc9eb26f4506fda01b81bcde0ca78103b6e62f991b381fec825435c836edbc29
-click==8.1.3
-Flask==2.2.2
-gunicorn==20.1.0
-itsdangerous==2.1.2
-Jinja2==3.1.2
-MarkupSafe==2.1.1
-Werkzeug==2.2.2
